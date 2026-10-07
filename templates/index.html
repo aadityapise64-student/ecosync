@@ -1,0 +1,287 @@
+{% extends 'base.html' %}
+
+{% block title %}EcoSync — Smart Door-to-Door Waste Collection{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="row align-items-center py-5">
+    <div class="col-lg-7 text-center text-lg-start pe-lg-5">
+        <div class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill mb-3 fw-semibold">
+            <i class="fa-solid fa-leaf me-1"></i> Version 2: Working Platform Prototype
+        </div>
+        <h1 class="display-4 fw-extrabold text-dark tracking-tight mb-3">
+            Smart Door-to-Door <br><span class="text-success">Waste Collection</span> & Recycling
+        </h1>
+        <p class="lead text-muted mb-4">
+            An integrated digital ecosystem connecting households, collection workers, segregation facilities, and recycling organizations. Digitize pickups, track waste movement in real-time, and incentivize segregation through reward coupons.
+        </p>
+        <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start">
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg px-4 shadow-sm">
+                <i class="fa-solid fa-user-plus me-2"></i> Get Started
+            </a>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-dark btn-lg px-4">
+                <i class="fa-solid fa-right-to-bracket me-2"></i> Log In
+            </a>
+            <a href="#demo-accounts" class="btn btn-light border btn-lg px-3 text-secondary">
+                <i class="fa-solid fa-key me-1"></i> Demo Credentials
+            </a>
+        </div>
+    </div>
+    <div class="col-lg-5 mt-5 mt-lg-0">
+        <!-- Live Demo Quick Access Card -->
+        <div class="card shadow border-0 p-4" id="demo-accounts">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-3">
+                <h5 class="fw-bold mb-0 text-dark">
+                    <i class="fa-solid fa-users text-success me-2"></i> 5-Role Demo Accounts
+                </h5>
+                <span class="badge bg-success">Pre-configured</span>
+            </div>
+            <p class="text-muted small mb-3">
+                Click any role below to pre-fill the login form or sign in directly with the standard password: <code>password123</code> (Admin: <code>admin123</code>):
+            </p>
+            <div class="list-group list-group-flush small">
+                <a href="{{ url_for('auth.login', email='household@ecosync.com') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2 px-2 rounded">
+                    <div>
+                        <i class="fa-solid fa-house-user text-primary me-2"></i>
+                        <strong>Household:</strong> household@ecosync.com
+                    </div>
+                    <span class="badge bg-primary-subtle text-primary">Login &rarr;</span>
+                </a>
+                <a href="{{ url_for('auth.login', email='worker@ecosync.com') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2 px-2 rounded">
+                    <div>
+                        <i class="fa-solid fa-truck-pickup text-info me-2"></i>
+                        <strong>Pickup Worker:</strong> worker@ecosync.com
+                    </div>
+                    <span class="badge bg-info-subtle text-info">Login &rarr;</span>
+                </a>
+                <a href="{{ url_for('auth.login', email='center@ecosync.com') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2 px-2 rounded">
+                    <div>
+                        <i class="fa-solid fa-industry text-warning me-2"></i>
+                        <strong>Collection Center:</strong> center@ecosync.com
+                    </div>
+                    <span class="badge bg-warning-subtle text-warning">Login &rarr;</span>
+                </a>
+                <a href="{{ url_for('auth.login', email='recycler@ecosync.com') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2 px-2 rounded">
+                    <div>
+                        <i class="fa-solid fa-recycle text-success me-2"></i>
+                        <strong>Recycler Org:</strong> recycler@ecosync.com
+                    </div>
+                    <span class="badge bg-success-subtle text-success">Login &rarr;</span>
+                </a>
+                <a href="{{ url_for('auth.login', email='admin@ecosync.com') }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2 px-2 rounded">
+                    <div>
+                        <i class="fa-solid fa-shield-halved text-danger me-2"></i>
+                        <strong>Municipality Admin:</strong> admin@ecosync.com
+                    </div>
+                    <span class="badge bg-danger-subtle text-danger">Login &rarr;</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 8-Step Physical & Digital Workflow Section -->
+<div class="py-5" id="workflow">
+    <div class="text-center mb-5">
+        <span class="text-success fw-bold text-uppercase small">System Methodology</span>
+        <h2 class="fw-bold mt-1">End-to-End 8-Step Waste Lifecycle</h2>
+        <p class="text-muted mx-auto" style="max-width: 650px;">
+            How waste moves from household doorsteps to segregation centers, recycling organizations, and reward redemption.
+        </p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 p-4 border-0 shadow-sm text-center">
+                <div class="rounded-circle bg-success-subtle text-success mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 55px; height: 55px;">
+                    <i class="fa-solid fa-address-card fa-xl"></i>
+                </div>
+                <h6 class="fw-bold mb-2">1. Register Profile</h6>
+                <p class="text-muted small mb-0">Household creates an account and sets up collection address with GPS coordinates.</p>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 p-4 border-0 shadow-sm text-center">
+                <div class="rounded-circle bg-info-subtle text-info mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 55px; height: 55px;">
+                    <i class="fa-solid fa-camera fa-xl"></i>
+                </div>
+                <h6 class="fw-bold mb-2">2. Upload Photo</h6>
+                <p class="text-muted small mb-0">User uploads a reference photo of the waste batch for worker clarity.</p>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 p-4 border-0 shadow-sm text-center">
+                <div class="rounded-circle bg-primary-subtle text-primary mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 55px; height: 55px;">
+                    <i class="fa-solid fa-calendar-check fa-xl"></i>
+                </div>
+                <h6 class="fw-bold mb-2">3. Schedule Request</h6>
+                <p class="text-muted small mb-0">Select waste category (Organic, Recyclable, Hazardous, Non-Recyclable) and time window.</p>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 p-4 border-0 shadow-sm text-center">
+                <div class="rounded-circle bg-warning-subtle text-warning mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 55px; height: 55px;">
+                    <i class="fa-solid fa-truck-fast fa-xl"></i>
+                </div>
+                <h6 class="fw-bold mb-2">4. Worker Accepts</h6>
+                <p class="text-muted small mb-0">An assigned pickup worker reviews request details and accepts the collection route.</p>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 p-4 border-0 shadow-sm text-center">
+                <div class="rounded-circle bg-secondary-subtle text-secondary mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 55px; height: 55px;">
+                    <i class="fa-solid fa-box-archive fa-xl"></i>
+                </div>
+                <h6 class="fw-bold mb-2">5. Waste Collection</h6>
+                <p class="text-muted small mb-0">Worker arrives at doorstep, collects segregated bags, and marks status as Collected.</p>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 p-4 border-0 shadow-sm text-center">
+                <div class="rounded-circle bg-danger-subtle text-danger mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 55px; height: 55px;">
+                    <i class="fa-solid fa-industry fa-xl"></i>
+                </div>
+                <h6 class="fw-bold mb-2">6. Center Delivery</h6>
+                <p class="text-muted small mb-0">Waste is transported to the nearest recovery & segregation facility (At Center).</p>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 p-4 border-0 shadow-sm text-center">
+                <div class="rounded-circle bg-success-subtle text-success mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 55px; height: 55px;">
+                    <i class="fa-solid fa-scale-balanced fa-xl"></i>
+                </div>
+                <h6 class="fw-bold mb-2">7. Weighed & Segregated</h6>
+                <p class="text-muted small mb-0">Materials weighed by sub-type (Plastic, Metal, Glass, Paper, Bio-waste) and logged.</p>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card h-100 p-4 border-0 shadow-sm text-center">
+                <div class="rounded-circle bg-warning-subtle text-warning mx-auto d-flex align-items-center justify-content-center mb-3" style="width: 55px; height: 55px;">
+                    <i class="fa-solid fa-award fa-xl"></i>
+                </div>
+                <h6 class="fw-bold mb-2">8. Recycling & Rewards</h6>
+                <p class="text-muted small mb-0">Recyclables routed to partner plants; household credited with reward coupon points!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Core System Modules Grid -->
+<div class="py-5" id="features">
+    <div class="text-center mb-5">
+        <span class="text-success fw-bold text-uppercase small">Role Portals</span>
+        <h2 class="fw-bold mt-1">Five Coordinated Portals</h2>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 p-4 border-0 shadow-sm card-hover">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="p-3 bg-success-subtle rounded-3 text-success">
+                        <i class="fa-solid fa-house-chimney fa-xl"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Household Portal</h5>
+                        <span class="text-muted small">Resident Interface</span>
+                    </div>
+                </div>
+                <p class="text-muted small">
+                    Schedule pickups, upload photos, live visual progression tracker (Requested &rarr; Segregated), and browse the reward points coupon marketplace.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 p-4 border-0 shadow-sm card-hover">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="p-3 bg-info-subtle rounded-3 text-info">
+                        <i class="fa-solid fa-truck-pickup fa-xl"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Pickup Worker App</h5>
+                        <span class="text-muted small">Collection Operations</span>
+                    </div>
+                </div>
+                <p class="text-muted small">
+                    View assigned household pickups, one-click status transitions (Accept, Collect, Deliver to Center), and track daily collection volume.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 p-4 border-0 shadow-sm card-hover">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="p-3 bg-warning-subtle rounded-3 text-warning">
+                        <i class="fa-solid fa-industry fa-xl"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Collection Center</h5>
+                        <span class="text-muted small">Recovery Facility</span>
+                    </div>
+                </div>
+                <p class="text-muted small">
+                    Weigh and record segregated streams (Plastic, Metal, Glass, Paper, Bio). Triggers automated household reward computation and material dispatch.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 p-4 border-0 shadow-sm card-hover">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="p-3 bg-primary-subtle rounded-3 text-primary">
+                        <i class="fa-solid fa-recycle fa-xl"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Recycler Organization</h5>
+                        <span class="text-muted small">Downstream Processing</span>
+                    </div>
+                </div>
+                <p class="text-muted small">
+                    Receives dispatched recyclable batches from collection centers, verifies weights, and acknowledges raw material recovery.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 p-4 border-0 shadow-sm card-hover">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="p-3 bg-danger-subtle rounded-3 text-danger">
+                        <i class="fa-solid fa-shield-halved fa-xl"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Municipality Admin</h5>
+                        <span class="text-muted small">System Governance</span>
+                    </div>
+                </div>
+                <p class="text-muted small">
+                    Full municipal oversight, worker assignment to pending requests, recovery rate statistics, coupon catalog management, and interactive charts.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 p-4 border-0 shadow-sm card-hover bg-light">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="p-3 bg-white rounded-3 text-dark shadow-sm">
+                        <i class="fa-solid fa-gift fa-xl text-warning"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">Rewards & Coupons</h5>
+                        <span class="text-muted small">Incentive Engine</span>
+                    </div>
+                </div>
+                <p class="text-muted small">
+                    Converts responsible waste segregation into tangible benefits: grocery discounts, bio-fertilizer vouchers, and municipal property tax rebates.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

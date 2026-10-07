@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Address — EcoSync{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-0 p-4">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-4">
+                <h4 class="fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-map-pin text-success me-2"></i> Add Collection Address
+                </h4>
+                <a href="{{ url_for('household.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+                    &larr; Back
+                </a>
+            </div>
+
+            <form method="POST" action="{{ url_for('household.add_address') }}">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Address Label / Title</label>
+                    <input type="text" name="title" class="form-control" placeholder="e.g. Home, Parents House, Office" value="Home" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Address Line (Flat / Building / Street) <span class="text-danger">*</span></label>
+                    <input type="text" name="address_line" class="form-control" placeholder="Flat 101, Shanti Heights, 4th Lane" required>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Area / Locality</label>
+                        <input type="text" name="area" class="form-control" placeholder="Rajarampuri">
+                    </div>
+                    <div class="col-3">
+                        <label class="form-label small fw-semibold">City</label>
+                        <input type="text" name="city" class="form-control" value="Kolhapur" required>
+                    </div>
+                    <div class="col-3">
+                        <label class="form-label small fw-semibold">Pincode <span class="text-danger">*</span></label>
+                        <input type="text" name="pincode" class="form-control" placeholder="416008" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Save Address
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Rewards & Coupons Marketplace — EcoSync{% endblock %}
+
+{% block content %}
+<!-- Points Balance Card -->
+<div class="card shadow-sm border-0 p-4 mb-4 bg-white">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <span class="badge bg-warning text-dark px-3 py-1 fw-bold text-uppercase mb-2">
+                <i class="fa-solid fa-star me-1"></i> Green Citizen Rewards
+            </span>
+            <h2 class="fw-bold text-dark mb-1">Rewards & Voucher Marketplace</h2>
+            <p class="text-muted small mb-0">
+                Earn points every time you segregate household waste. Redeem your accumulated points for exclusive shopping discounts, organic compost bags, and municipal tax rebates!
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <div class="p-3 bg-warning-subtle rounded-3 d-inline-block text-center border border-warning">
+                <span class="small fw-semibold text-warning-emphasis text-uppercase d-block">Your Balance</span>
+                <h2 class="fw-extrabold text-dark mb-0 d-flex align-items-center justify-content-center gap-2">
+                    <i class="fa-solid fa-coins text-warning"></i> {{ current_user.reward_points }}
+                    <span class="small fw-normal text-muted" style="font-size: 1rem;">Points</span>
+                </h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Coupons Marketplace Grid -->
+<div class="mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold text-dark mb-0">
+            <i class="fa-solid fa-tags text-success me-2"></i> Available Coupons & Incentives
+        </h4>
+        <span class="text-muted small">{{ coupons|length }} Offers Active</span>
+    </div>
+
+    <div class="row g-4">
+        {% for coupon in coupons %}
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100 border-0 shadow-sm card-hover d-flex flex-column justify-content-between">
+                    <div class="p-4">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge bg-light text-secondary border">{{ coupon.category }}</span>
+                            <span class="badge bg-success-subtle text-success fw-bold">{{ coupon.discount_value }}</span>
+                        </div>
+                        <h5 class="fw-bold text-dark mb-1">{{ coupon.title }}</h5>
+                        <p class="small text-muted mb-2">
+                            <i class="fa-solid fa-store me-1 text-secondary"></i> {{ coupon.partner_name }}
+                        </p>
+                        <p class="small text-secondary mb-3">
+                            {{ coupon.description }}
+                        </p>
+                    </div>
+
+                    <div class="p-4 pt-0">
+                        <div class="border-top pt-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold text-warning-emphasis">
+                                    <i class="fa-solid fa-coins text-warning me-1"></i> {{ coupon.points_cost }}
+                                </span>
+                                <span class="text-muted" style="font-size: 0.75rem;">pts</span>
+                            </div>
+
+                            {% if current_user.reward_points >= coupon.points_cost %}
+                                <form method="POST" action="{{ url_for('household.redeem_coupon', coupon_id=coupon.id) }}" onsubmit="return confirm('Redeem this voucher for {{ coupon.points_cost }} points?');">
+                                    <button type="submit" class="btn btn-sm btn-primary">
+                                        Redeem Now
+                                    </button>
+                                </form>
+                            {% else %}
+                                <button class="btn btn-sm btn-light border text-muted" disabled title="You need {{ coupon.points_cost - current_user.reward_points }} more points">
+                                    Need {{ coupon.points_cost - current_user.reward_points }} pts
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Reward History / Transactions Table -->
+<div class="card border-0 shadow-sm p-4">
+    <h5 class="fw-bold text-dark border-bottom pb-3 mb-3">
+        <i class="fa-solid fa-receipt text-success me-2"></i> Points Activity & Redeemed Vouchers
+    </h5>
+
+    {% if transactions %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Description / Promo Code</th>
+                        <th class="text-end">Points Change</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in transactions %}
+                        <tr>
+                            <td class="text-muted">{{ tx.created_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                            <td>
+                                {% if tx.transaction_type == 'EARNED' %}
+                                    <span class="badge bg-success-subtle text-success">
+                                        <i class="fa-solid fa-arrow-trend-up me-1"></i> Earned
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-warning-subtle text-warning-emphasis">
+                                        <i class="fa-solid fa-gift me-1"></i> Redeemed
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-dark">{{ tx.description }}</span>
+                                {% if tx.coupon %}
+                                    <span class="badge bg-dark text-warning ms-2 font-monospace px-2 py-1">
+                                        CODE: {{ tx.coupon.code }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end fw-bold {% if tx.transaction_type == 'EARNED' %}text-success{% else %}text-danger{% endif %}">
+                                {% if tx.transaction_type == 'EARNED' %}+{% else %}-{% endif %}{{ tx.points }} pts
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted small text-center py-4 mb-0">No points activity recorded yet. Submit segregated waste to start earning!</p>
+    {% endif %}
+</div>
+{% endblock %}

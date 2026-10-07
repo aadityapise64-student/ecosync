@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}Worker Task Dashboard — EcoSync{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-7">
+        <h2 class="fw-bold text-dark mb-1">
+            Collection Worker Portal 🚛
+        </h2>
+        <p class="text-muted small mb-0">
+            Worker: <strong>{{ current_user.name }}</strong> • Assigned Municipal Collection Route
+        </p>
+    </div>
+    <div class="col-md-5 text-md-end mt-3 mt-md-0">
+        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+            <i class="fa-solid fa-circle text-success me-1 fa-2xs"></i> Active on Route
+        </span>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card p-3 border-0 shadow-sm">
+            <span class="text-muted small text-uppercase fw-semibold">Pending Pickup Tasks</span>
+            <h3 class="fw-bold text-primary mb-0">{{ active_assignments|length }}</h3>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-3">
+        <div class="card p-3 border-0 shadow-sm">
+            <span class="text-muted small text-uppercase fw-semibold">Delivered to Centers</span>
+            <h3 class="fw-bold text-success mb-0">{{ delivered_assignments|length }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Active Task Cards Grid -->
+<div class="mb-5">
+    <h4 class="fw-bold text-dark mb-3">
+        <i class="fa-solid fa-list-check text-primary me-2"></i> Current Assigned Pickup Tasks
+    </h4>
+
+    {% if active_assignments %}
+        <div class="row g-4">
+            {% for a in active_assignments %}
+                {% set req = a.request %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 border-0 shadow-sm card-hover d-flex flex-column justify-content-between">
+                        <div class="p-4">
+                            <!-- Card Header -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <span class="fw-bold text-secondary small">Request #{{ req.id }}</span>
+                                    <h5 class="fw-bold text-dark mb-0 mt-1">{{ req.household.name }}</h5>
+                                </div>
+                                <span class="badge badge-category-{{ req.waste_category }}">
+                                    {{ req.waste_category }}
+                                </span>
+                            </div>
+
+                            <!-- Address & Contact -->
+                            <div class="p-3 bg-light rounded border mb-3 small">
+                                <p class="mb-1 fw-semibold text-dark">
+                                    <i class="fa-solid fa-location-dot text-danger me-1"></i> {{ req.address.address_line }}
+                                </p>
+                                <p class="text-muted mb-2">{{ req.address.area }}, {{ req.address.city }} ({{ req.address.pincode }})</p>
+                                <p class="mb-0">
+                                    <a href="tel:{{ req.household.phone }}" class="text-success text-decoration-none fw-semibold">
+                                        <i class="fa-solid fa-phone me-1"></i> {{ req.household.phone or 'No phone' }}
+                                    </a>
+                                </p>
+                            </div>
+
+                            <!-- Schedule & Notes -->
+                            <div class="small mb-3">
+                                <div class="text-muted mb-1">
+                                    <i class="fa-solid fa-calendar me-1"></i> {{ req.scheduled_date.strftime('%a, %d %b %Y') }}
+                                </div>
+                                <div class="text-muted mb-1">
+                                    <i class="fa-solid fa-clock me-1"></i> {{ req.time_slot }}
+                                </div>
+                                {% if req.notes %}
+                                    <div class="text-secondary mt-2 fst-italic">"{{ req.notes }}"</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Photo thumbnail if uploaded -->
+                            {% if req.photo_filename %}
+                                <div class="mb-3">
+                                    <a href="{{ url_for('static', filename='uploads/' + req.photo_filename) }}" target="_blank">
+                                        <img src="{{ url_for('static', filename='uploads/' + req.photo_filename) }}" alt="Waste Photo" class="img-thumbnail" style="max-height: 100px;">
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Card Action Footer -->
+                        <div class="p-4 pt-0">
+                            <div class="border-top pt-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small text-muted">Current Status:</span>
+                                    <span class="badge bg-primary">{{ req.status }}</span>
+                                </div>
+
+                                {% if req.status == 'Assigned' %}
+                                    <form method="POST" action="{{ url_for('worker.accept_task', request_id=req.id) }}">
+                                        <button type="submit" class="btn btn-primary w-100 btn-sm">
+                                            <i class="fa-solid fa-check me-1"></i> Accept Collection Task
+                                        </button>
+                                    </form>
+
+                                {% elif req.status == 'Accepted' %}
+                                    <form method="POST" action="{{ url_for('worker.collect_task', request_id=req.id) }}">
+                                        <button type="submit" class="btn btn-warning w-100 btn-sm text-dark fw-semibold">
+                                            <i class="fa-solid fa-box me-1"></i> Confirm Waste Collected
+                                        </button>
+                                    </form>
+
+                                {% elif req.status == 'Collected' %}
+                                    <!-- Deliver to Center Form -->
+                                    <form method="POST" action="{{ url_for('worker.deliver_to_center', request_id=req.id) }}">
+                                        <div class="mb-2">
+                                            <select name="center_id" class="form-select form-select-sm border-danger" required>
+                                                <option value="" disabled selected>Select Drop-off Facility...</option>
+                                                {% for c in centers %}
+                                                    <option value="{{ c.id }}">{{ c.center_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-danger w-100 btn-sm">
+                                            <i class="fa-solid fa-industry me-1"></i> Deliver to Center
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card border-0 shadow-sm p-5 text-center">
+            <i class="fa-solid fa-clipboard-check text-muted fa-3x mb-3"></i>
+            <h5>All clear! No pending tasks right now.</h5>
+            <p class="text-muted small">New household collection requests will appear here once allocated by municipal admin.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Delivered Task History Table -->
+<div class="card border-0 shadow-sm p-4">
+    <h5 class="fw-bold text-dark border-bottom pb-3 mb-3">
+        <i class="fa-solid fa-circle-check text-success me-2"></i> Completed Deliveries Log
+    </h5>
+
+    {% if delivered_assignments %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Req #</th>
+                        <th>Household</th>
+                        <th>Address</th>
+                        <th>Category</th>
+                        <th>Destination Center</th>
+                        <th>Lifecycle Stage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in delivered_assignments %}
+                        <tr>
+                            <td class="fw-semibold">#{{ a.request.id }}</td>
+                            <td>{{ a.request.household.name }}</td>
+                            <td>{{ a.request.address.address_line }}</td>
+                            <td>
+                                <span class="badge badge-category-{{ a.request.waste_category }}">
+                                    {{ a.request.waste_category }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if a.destination_center %}
+                                    {{ a.destination_center.center_name }}
+                                {% else %}
+                                    <span class="text-muted">General Facility</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if a.request.status == 'Segregated' %}
+                                    <span class="badge bg-success">Segregated ✓</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">At Center (In Queue)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted small mb-0 text-center py-3">No completed deliveries yet today.</p>
+    {% endif %}
+</div>
+{% endblock %}

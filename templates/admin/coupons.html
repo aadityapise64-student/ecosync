@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Coupons — EcoSync Admin{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="fw-bold text-dark mb-1">
+            Reward & Coupon Catalog Management 🎟️
+        </h2>
+        <p class="text-muted small mb-0">
+            Configure redeemable partner vouchers, municipal property tax rebates, and eco-incentives.
+        </p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Add Coupon Form -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm p-4">
+            <h5 class="fw-bold text-dark border-bottom pb-3 mb-3">
+                <i class="fa-solid fa-plus text-success me-1"></i> Add New Voucher Offer
+            </h5>
+            <form method="POST" action="{{ url_for('admin.manage_coupons') }}">
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold">Coupon Code <span class="text-danger">*</span></label>
+                    <input type="text" name="code" class="form-control form-control-sm text-uppercase" placeholder="e.g. ECO50, RECYCLE10" required>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold">Offer Title <span class="text-danger">*</span></label>
+                    <input type="text" name="title" class="form-control form-control-sm" placeholder="e.g. ₹50 Supermarket Voucher" required>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold">Description</label>
+                    <textarea name="description" class="form-control form-control-sm" rows="2" placeholder="Terms and redemption details..." required></textarea>
+                </div>
+
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Points Cost <span class="text-danger">*</span></label>
+                        <input type="number" name="points_cost" class="form-control form-control-sm" placeholder="100" min="10" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Discount Badge <span class="text-danger">*</span></label>
+                        <input type="text" name="discount_value" class="form-control form-control-sm" placeholder="₹50 OFF" required>
+                    </div>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold">Partner / Merchant Name</label>
+                    <input type="text" name="partner_name" class="form-control form-control-sm" placeholder="e.g. D-Mart, KMC, GreenStore" required>
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Category</label>
+                        <select name="category" class="form-select form-select-sm">
+                            <option value="Grocery" selected>Grocery</option>
+                            <option value="Fertilizer/Compost">Fertilizer/Compost</option>
+                            <option value="Municipal Rebate">Municipal Rebate</option>
+                            <option value="Eco-Store">Eco-Store</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small fw-semibold">Valid Until</label>
+                        <input type="date" name="valid_until" class="form-control form-control-sm" value="{{ default_expiry }}" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-sm w-100 py-2 fw-semibold">
+                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Publish Coupon Offer
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Existing Coupons Table -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm p-4">
+            <h5 class="fw-bold text-dark border-bottom pb-3 mb-3">
+                <i class="fa-solid fa-tags text-primary me-1"></i> Active Marketplace Coupons ({{ coupons|length }})
+            </h5>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 small">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Title & Partner</th>
+                            <th>Points</th>
+                            <th>Discount</th>
+                            <th>Valid Until</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for c in coupons %}
+                            <tr>
+                                <td><span class="badge bg-dark font-monospace text-warning">{{ c.code }}</span></td>
+                                <td>
+                                    <strong>{{ c.title }}</strong>
+                                    <div class="text-muted" style="font-size: 0.75rem;">{{ c.partner_name }} ({{ c.category }})</div>
+                                </td>
+                                <td class="fw-bold text-warning-emphasis">{{ c.points_cost }} pts</td>
+                                <td><span class="badge bg-success-subtle text-success">{{ c.discount_value }}</span></td>
+                                <td>{{ c.valid_until.strftime('%d %b %Y') }}</td>
+                                <td>
+                                    {% if c.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ url_for('admin.toggle_coupon', id=c.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                            {{ 'Deactivate' if c.is_active else 'Activate' }}
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

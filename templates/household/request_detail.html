@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+
+{% block title %}Request #{{ pickup.id }} Tracking — EcoSync{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-lg-9">
+        <div class="card shadow-sm border-0 p-4 mb-4">
+            <!-- Header -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-4 gap-2">
+                <div>
+                    <span class="text-muted small text-uppercase">Collection Request</span>
+                    <h3 class="fw-bold text-dark mb-0">
+                        Request #{{ pickup.id }}
+                        <span class="badge badge-category-{{ pickup.waste_category }} ms-2" style="font-size: 0.9rem;">
+                            {{ pickup.waste_category }}
+                        </span>
+                    </h3>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('household.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+                        &larr; Back to Dashboard
+                    </a>
+                    {% if pickup.status in ['Requested', 'Assigned'] %}
+                        <form method="POST" action="{{ url_for('household.cancel_request', id=pickup.id) }}" onsubmit="return confirm('Are you sure you want to cancel this request?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancel Request</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Stepper Progress Bar -->
+            <div class="mb-5 pt-2">
+                <h6 class="fw-bold text-muted small text-uppercase text-center mb-4">Live Waste Lifecycle Progression</h6>
+                <div class="stepper-wrapper">
+                    {% for step in status_steps %}
+                        {% set step_idx = loop.index0 %}
+                        <div class="stepper-item {% if current_step_index > step_idx %}completed{% elif current_step_index == step_idx %}active{% endif %}">
+                            <div class="step-counter">
+                                {% if current_step_index > step_idx %}
+                                    <i class="fa-solid fa-check"></i>
+                                {% else %}
+                                    {{ loop.index }}
+                                {% endif %}
+                            </div>
+                            <div class="step-name">{{ step }}</div>
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if pickup.status == 'Cancelled' %}
+                    <div class="alert alert-danger text-center py-2 mb-0 mt-3 small">
+                        <i class="fa-solid fa-ban me-1"></i> This pickup request was cancelled.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Request Details Grid -->
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded border h-100">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-circle-info text-success me-1"></i> Schedule & Location
+                        </h6>
+                        <ul class="list-unstyled small mb-0 space-y-2">
+                            <li class="mb-2"><strong>Scheduled Date:</strong> {{ pickup.scheduled_date.strftime('%A, %d %B %Y') }}</li>
+                            <li class="mb-2"><strong>Preferred Slot:</strong> {{ pickup.time_slot }}</li>
+                            <li class="mb-2"><strong>Pickup Address:</strong> {{ pickup.address.address_line }}, {{ pickup.address.area }}, {{ pickup.address.city }} ({{ pickup.address.pincode }})</li>
+                            <li class="mb-2"><strong>Requested On:</strong> {{ pickup.created_at.strftime('%d %b %Y, %I:%M %p') }}</li>
+                            {% if pickup.notes %}
+                                <li class="mt-2 text-muted"><em>"{{ pickup.notes }}"</em></li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded border h-100">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">
+                            <i class="fa-solid fa-truck-pickup text-info me-1"></i> Assigned Operations
+                        </h6>
+                        {% if pickup.assignment %}
+                            <ul class="list-unstyled small mb-0">
+                                <li class="mb-2">
+                                    <strong>Collection Worker:</strong> 
+                                    <span class="text-primary fw-semibold">{{ pickup.assignment.worker.name }}</span>
+                                </li>
+                                <li class="mb-2">
+                                    <strong>Worker Contact:</strong> 
+                                    <a href="tel:{{ pickup.assignment.worker.phone }}" class="text-decoration-none">
+                                        <i class="fa-solid fa-phone me-1"></i> {{ pickup.assignment.worker.phone or 'Not provided' }}
+                                    </a>
+                                </li>
+                                {% if pickup.assignment.destination_center %}
+                                    <li class="mb-2">
+                                        <strong>Destination Center:</strong> 
+                                        {{ pickup.assignment.destination_center.center_name }}
+                                    </li>
+                                {% endif %}
+                                <li class="mb-2"><strong>Assignment Status:</strong> <span class="badge bg-secondary">{{ pickup.assignment.status }}</span></li>
+                            </ul>
+                        {% else %}
+                            <div class="text-center py-4 text-muted small">
+                                <i class="fa-solid fa-hourglass-half fa-2x mb-2 text-warning"></i>
+                                <p class="mb-0">Awaiting municipal worker allocation.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Uploaded Photo Reference if exists -->
+            {% if pickup.photo_filename %}
+                <div class="mt-4 pt-3 border-top">
+                    <h6 class="fw-bold text-dark mb-2">
+                        <i class="fa-solid fa-image text-muted me-1"></i> Uploaded Waste Reference Photo
+                    </h6>
+                    <img src="{{ url_for('static', filename='uploads/' + pickup.photo_filename) }}" alt="Waste Photo" class="img-thumbnail" style="max-height: 220px;">
+                </div>
+            {% endif %}
+
+            <!-- Segregation Breakdown & Rewards Awarded Card (If Segregated) -->
+            {% if pickup.segregation_record %}
+                {% set seg = pickup.segregation_record %}
+                <div class="card mt-4 border-success shadow-sm">
+                    <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0">
+                            <i class="fa-solid fa-certificate me-1"></i> Waste Segregation & Rewards Certificate
+                        </h6>
+                        <span class="badge bg-light text-success fw-bold px-3 py-1">
+                            +{{ seg.points_awarded }} Points Credited!
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-7">
+                                <h6 class="fw-bold text-dark mb-2 small text-uppercase">Weighed Material Breakdown:</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-bordered small mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Material Stream</th>
+                                                <th class="text-end">Weight (kg)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% if seg.recyclable_plastic_kg > 0 %}
+                                                <tr><td>🥤 Recyclable Plastic</td><td class="text-end fw-semibold">{{ seg.recyclable_plastic_kg }} kg</td></tr>
+                                            {% endif %}
+                                            {% if seg.recyclable_metal_kg > 0 %}
+                                                <tr><td>⚙️ Metal & Cans</td><td class="text-end fw-semibold">{{ seg.recyclable_metal_kg }} kg</td></tr>
+                                            {% endif %}
+                                            {% if seg.recyclable_paper_kg > 0 %}
+                                                <tr><td>📦 Paper & Cardboard</td><td class="text-end fw-semibold">{{ seg.recyclable_paper_kg }} kg</td></tr>
+                                            {% endif %}
+                                            {% if seg.recyclable_glass_kg > 0 %}
+                                                <tr><td>🍾 Glass Containers</td><td class="text-end fw-semibold">{{ seg.recyclable_glass_kg }} kg</td></tr>
+                                            {% endif %}
+                                            {% if seg.organic_kg > 0 %}
+                                                <tr><td>🌱 Organic Compostable</td><td class="text-end fw-semibold">{{ seg.organic_kg }} kg</td></tr>
+                                            {% endif %}
+                                            {% if seg.hazardous_kg > 0 %}
+                                                <tr><td>⚠️ Hazardous / E-Waste</td><td class="text-end fw-semibold">{{ seg.hazardous_kg }} kg</td></tr>
+                                            {% endif %}
+                                            {% if seg.non_recyclable_kg > 0 %}
+                                                <tr><td>🗑️ Non-Recyclable Residuals</td><td class="text-end fw-semibold">{{ seg.non_recyclable_kg }} kg</td></tr>
+                                            {% endif %}
+                                            <tr class="table-success fw-bold">
+                                                <td>Total Verified Weight</td>
+                                                <td class="text-end">{{ seg.total_weight_kg }} kg</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-md-5 text-center mt-3 mt-md-0 border-start ps-md-4">
+                                <div class="p-3 bg-light rounded">
+                                    <span class="text-muted small text-uppercase fw-semibold">Downstream Routing</span>
+                                    <h5 class="fw-bold text-primary mt-1 mb-2">{{ seg.routed_to }}</h5>
+                                    <p class="small text-muted mb-0">
+                                        Processed at <strong>{{ seg.center.center_name }}</strong> on {{ seg.recorded_at.strftime('%d %b %Y') }}.
+                                    </p>
+                                </div>
+                                <div class="mt-3">
+                                    <a href="{{ url_for('household.rewards') }}" class="btn btn-warning btn-sm fw-semibold w-100 shadow-sm">
+                                        <i class="fa-solid fa-gift me-1"></i> Redeem Your Reward Points
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

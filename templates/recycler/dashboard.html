@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+
+{% block title %}Recycler Organization Portal — EcoSync{% endblock %}
+
+{% block content %}
+<!-- Facility Header -->
+<div class="card shadow-sm border-0 p-4 mb-4 bg-white">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <span class="badge bg-success-subtle text-success border border-success px-3 py-1 fw-bold text-uppercase mb-2">
+                <i class="fa-solid fa-recycle me-1"></i> Partner Recycling Organization
+            </span>
+            <h3 class="fw-bold text-dark mb-1">{{ recycler.org_name }}</h3>
+            <p class="text-muted small mb-0">
+                <i class="fa-solid fa-location-dot text-danger me-1"></i> {{ recycler.address }} •
+                <i class="fa-solid fa-layer-group text-primary ms-2 me-1"></i> Accepted: {{ recycler.materials_accepted }}
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <span class="badge bg-primary px-3 py-2 fs-6">
+                <i class="fa-solid fa-circle-check me-1"></i> Certified Recovery Partner
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Metrics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-4">
+        <div class="card p-3 border-0 shadow-sm">
+            <span class="text-muted small text-uppercase fw-semibold">Total Recovered Material</span>
+            <h3 class="fw-bold text-success mb-0">{{ total_recovered_kg }} <span class="fs-6 fw-normal text-muted">kg</span></h3>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="card p-3 border-0 shadow-sm">
+            <span class="text-muted small text-uppercase fw-semibold">Incoming Dispatched Batches</span>
+            <h3 class="fw-bold text-warning mb-0">{{ pending_deliveries|length }}</h3>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-4">
+        <div class="card p-3 border-0 shadow-sm">
+            <span class="text-muted small text-uppercase fw-semibold">Processed Batches</span>
+            <h3 class="fw-bold text-primary mb-0">{{ received_deliveries|length }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Incoming Dispatched Batches -->
+<div class="card border-0 shadow-sm p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+        <h5 class="fw-bold text-dark mb-0">
+            <i class="fa-solid fa-truck-moving text-primary me-2"></i> Incoming Recyclable Batches from Centers
+        </h5>
+        <span class="badge bg-warning text-dark">{{ pending_deliveries|length }} Pending Intake</span>
+    </div>
+
+    {% if pending_deliveries %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Delivery #</th>
+                        <th>Origin Facility</th>
+                        <th>Material Summary</th>
+                        <th>Net Weight</th>
+                        <th>Dispatched Date</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in pending_deliveries %}
+                        <tr>
+                            <td class="fw-bold">#{{ d.id }}</td>
+                            <td>{{ d.center.center_name }}</td>
+                            <td><span class="fw-semibold">{{ d.materials_summary }}</span></td>
+                            <td class="fw-bold text-success">{{ d.total_weight_kg }} kg</td>
+                            <td>{{ d.dispatched_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                            <td class="text-end">
+                                <form method="POST" action="{{ url_for('recycler.receive_delivery', delivery_id=d.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-success fw-semibold">
+                                        <i class="fa-solid fa-check me-1"></i> Acknowledge & Receive
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-4 text-muted small">
+            <i class="fa-solid fa-boxes-packing fa-2x mb-2 text-secondary"></i>
+            <p class="mb-0">No new batches in transit right now.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Processed Batches Log -->
+<div class="card border-0 shadow-sm p-4">
+    <h5 class="fw-bold text-dark border-bottom pb-3 mb-3">
+        <i class="fa-solid fa-clock-rotate-left text-success me-2"></i> Received & Processed Material History
+    </h5>
+
+    {% if received_deliveries %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Delivery #</th>
+                        <th>Origin Facility</th>
+                        <th>Materials</th>
+                        <th>Weight</th>
+                        <th>Received On</th>
+                        <th>Status</th>
+                        <th class="text-end">Processing</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in received_deliveries %}
+                        <tr>
+                            <td class="fw-semibold text-secondary">#{{ d.id }}</td>
+                            <td>{{ d.center.center_name }}</td>
+                            <td>{{ d.materials_summary }}</td>
+                            <td class="fw-bold">{{ d.total_weight_kg }} kg</td>
+                            <td>{{ d.received_at.strftime('%d %b %Y, %I:%M %p') if d.received_at else '-' }}</td>
+                            <td>
+                                {% if d.status == 'Processed' %}
+                                    <span class="badge bg-success">Baled & Processed</span>
+                                {% else %}
+                                    <span class="badge bg-info">Received at Intake</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                {% if d.status != 'Processed' %}
+                                    <form method="POST" action="{{ url_for('recycler.process_delivery', delivery_id=d.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">
+                                            Mark Processed
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted small"><i class="fa-solid fa-circle-check text-success"></i> Done</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted small text-center py-3 mb-0">No received batch history yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

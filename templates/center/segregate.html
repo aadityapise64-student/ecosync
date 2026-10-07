@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}Weigh & Segregate Waste — EcoSync{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-lg-9">
+        <div class="card shadow-sm border-0 p-4">
+            <!-- Header -->
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-4">
+                <div>
+                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning px-2 py-1 small">Step 7 of 8</span>
+                    <h4 class="fw-bold text-dark mb-0 mt-1">
+                        <i class="fa-solid fa-scale-balanced text-success me-2"></i> Waste Weighing & Material Segregation
+                    </h4>
+                    <p class="text-muted small mb-0">Record verified weights, distribute reward points, and route materials</p>
+                </div>
+                <a href="{{ url_for('center.dashboard') }}" class="btn btn-sm btn-outline-secondary">
+                    &larr; Cancel & Back
+                </a>
+            </div>
+
+            <!-- Batch Summary Banner -->
+            <div class="p-3 bg-light rounded border mb-4">
+                <div class="row g-3 small">
+                    <div class="col-md-3">
+                        <span class="text-muted d-block">Request ID:</span>
+                        <strong>#{{ pickup.id }}</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-muted d-block">Household Name:</span>
+                        <strong>{{ pickup.household.name }}</strong> ({{ pickup.household.phone or 'No phone' }})
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-muted d-block">Origin Address:</span>
+                        <strong>{{ pickup.address.area }}, {{ pickup.address.city }}</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <span class="text-muted d-block">Declared Category:</span>
+                        <span class="badge badge-category-{{ pickup.waste_category }}">{{ pickup.waste_category }}</span>
+                    </div>
+                </div>
+                {% if pickup.photo_filename %}
+                    <div class="mt-2 pt-2 border-top">
+                        <span class="text-muted small me-2">Reference Photo:</span>
+                        <a href="{{ url_for('static', filename='uploads/' + pickup.photo_filename) }}" target="_blank" class="small text-primary">
+                            <i class="fa-solid fa-image me-1"></i> View Uploaded Image
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Segregation Weights Entry Form -->
+            <form method="POST" action="{{ url_for('center.segregate', request_id=pickup.id) }}">
+                <h5 class="fw-bold text-dark mb-3">1. Measured Material Weights (in kg)</h5>
+                
+                <!-- Recyclables Group -->
+                <div class="p-3 bg-primary-subtle rounded border border-primary-subtle mb-3">
+                    <h6 class="fw-bold text-primary mb-3">
+                        <i class="fa-solid fa-recycle me-1"></i> Recyclable Materials (High Incentive: 6–10 pts/kg)
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label small fw-semibold">🥤 Plastic Bottles & Packaging (kg)</label>
+                            <input type="number" step="0.1" min="0" name="plastic_kg" id="plastic_kg" class="form-control form-control-sm weight-input" value="0.0" oninput="calculateTotals()">
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label small fw-semibold">⚙️ Metal Cans & Scrap (kg)</label>
+                            <input type="number" step="0.1" min="0" name="metal_kg" id="metal_kg" class="form-control form-control-sm weight-input" value="0.0" oninput="calculateTotals()">
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label small fw-semibold">📦 Paper & Cardboard (kg)</label>
+                            <input type="number" step="0.1" min="0" name="paper_kg" id="paper_kg" class="form-control form-control-sm weight-input" value="0.0" oninput="calculateTotals()">
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <label class="form-label small fw-semibold">🍾 Glass Bottles (kg)</label>
+                            <input type="number" step="0.1" min="0" name="glass_kg" id="glass_kg" class="form-control form-control-sm weight-input" value="0.0" oninput="calculateTotals()">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Organic & Special Group -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <div class="p-3 bg-success-subtle rounded border border-success-subtle h-100">
+                            <h6 class="fw-bold text-success mb-2">
+                                🌱 Organic / Biodegradable
+                            </h6>
+                            <label class="form-label small fw-semibold">Food & Yard Waste (kg)</label>
+                            <input type="number" step="0.1" min="0" name="organic_kg" id="organic_kg" class="form-control form-control-sm weight-input" value="0.0" oninput="calculateTotals()">
+                            <span class="small text-muted d-block mt-1">4 pts/kg reward</span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 bg-danger-subtle rounded border border-danger-subtle h-100">
+                            <h6 class="fw-bold text-danger mb-2">
+                                ⚠️ Hazardous / E-Waste
+                            </h6>
+                            <label class="form-label small fw-semibold">Batteries / Electronics (kg)</label>
+                            <input type="number" step="0.1" min="0" name="hazardous_kg" id="hazardous_kg" class="form-control form-control-sm weight-input" value="0.0" oninput="calculateTotals()">
+                            <span class="small text-muted d-block mt-1">15 pts/kg reward</span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-3 bg-light rounded border h-100">
+                            <h6 class="fw-bold text-secondary mb-2">
+                                🗑️ Non-Recyclable Residuals
+                            </h6>
+                            <label class="form-label small fw-semibold">Sanitary / Multi-layer (kg)</label>
+                            <input type="number" step="0.1" min="0" name="non_recyclable_kg" id="non_recyclable_kg" class="form-control form-control-sm weight-input" value="0.0" oninput="calculateTotals()">
+                            <span class="small text-muted d-block mt-1">1 pt/kg participation</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-time Computed Summary & Points Preview -->
+                <div class="card bg-dark text-white border-0 p-3 mb-4">
+                    <div class="row align-items-center text-center">
+                        <div class="col-sm-6 border-end border-secondary">
+                            <span class="text-secondary small text-uppercase">Total Batch Weight</span>
+                            <h3 class="fw-bold text-white mb-0" id="totalWeightDisplay">0.0 kg</h3>
+                        </div>
+                        <div class="col-sm-6">
+                            <span class="text-secondary small text-uppercase">Automated Points Credited</span>
+                            <h3 class="fw-bold text-warning mb-0" id="totalPointsDisplay">+0 pts</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Downstream Material Routing -->
+                <h5 class="fw-bold text-dark mb-3">2. Downstream Processing & Material Routing</h5>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Primary Routing Destination <span class="text-danger">*</span></label>
+                        <select name="routed_to" id="routedToSelect" class="form-select" onchange="toggleRecyclerSelect()" required>
+                            <option value="Recycler Org" selected>♻️ Route Recyclables to Partner Recycling Org</option>
+                            <option value="Composting">🌱 Route Organics to Municipal Composting Facility</option>
+                            <option value="Disposal">🚛 Route Residuals to Engineered Landfill / WtE</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6" id="recyclerSelectContainer">
+                        <label class="form-label small fw-semibold">Select Recycler Organization</label>
+                        <select name="recycler_id" class="form-select">
+                            {% for r in recyclers %}
+                                <option value="{{ r.id }}">{{ r.org_name }} ({{ r.materials_accepted }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 3. Remarks -->
+                <div class="mb-4">
+                    <label class="form-label small fw-semibold">Segregation Quality Remarks</label>
+                    <input type="text" name="remarks" class="form-control" placeholder="e.g. Well-segregated PET bottles with clean labels.">
+                </div>
+
+                <button type="submit" class="btn btn-success btn-lg w-100 py-2">
+                    <i class="fa-solid fa-check-double me-2"></i> Confirm Segregation & Credit Household Reward Points
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function calculateTotals() {
+    const plastic = parseFloat(document.getElementById('plastic_kg').value) || 0;
+    const metal = parseFloat(document.getElementById('metal_kg').value) || 0;
+    const paper = parseFloat(document.getElementById('paper_kg').value) || 0;
+    const glass = parseFloat(document.getElementById('glass_kg').value) || 0;
+    const organic = parseFloat(document.getElementById('organic_kg').value) || 0;
+    const hazardous = parseFloat(document.getElementById('hazardous_kg').value) || 0;
+    const non_recyclable = parseFloat(document.getElementById('non_recyclable_kg').value) || 0;
+
+    const totalWeight = plastic + metal + paper + glass + organic + hazardous + non_recyclable;
+    let points = Math.floor(
+        (plastic * 10) + (metal * 10) + (paper * 6) + (glass * 6) + 
+        (organic * 4) + (hazardous * 15) + (non_recyclable * 1)
+    );
+    if (totalWeight > 0 && points < 5) points = 5;
+
+    document.getElementById('totalWeightDisplay').innerText = totalWeight.toFixed(1) + ' kg';
+    document.getElementById('totalPointsDisplay').innerText = '+' + points + ' pts';
+}
+
+function toggleRecyclerSelect() {
+    const routedTo = document.getElementById('routedToSelect').value;
+    const container = document.getElementById('recyclerSelectContainer');
+    container.classList.toggle('d-none', routedTo !== 'Recycler Org');
+}
+</script>
+{% endblock %}

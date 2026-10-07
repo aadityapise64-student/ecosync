@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Workers — EcoSync Admin{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="fw-bold text-dark mb-1">
+            Worker Allocation Console 🚛
+        </h2>
+        <p class="text-muted small mb-0">
+            Allocate unassigned household collection requests to active municipal workers and designate drop-off facilities.
+        </p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm p-4">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+        <h5 class="fw-bold text-dark mb-0">
+            <i class="fa-solid fa-clipboard-question text-danger me-2"></i> Requests Awaiting Worker Allocation
+        </h5>
+        <span class="badge bg-danger">{{ unassigned_requests|length }} Pending Allocation</span>
+    </div>
+
+    {% if unassigned_requests %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Req #</th>
+                        <th>Household</th>
+                        <th>Address</th>
+                        <th>Category</th>
+                        <th>Scheduled For</th>
+                        <th style="min-width: 320px;">Assign Worker & Destination Center</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in unassigned_requests %}
+                        <tr>
+                            <td class="fw-bold">#{{ req.id }}</td>
+                            <td>
+                                <strong>{{ req.household.name }}</strong>
+                                <div class="text-muted" style="font-size: 0.75rem;">{{ req.household.phone or 'No phone' }}</div>
+                            </td>
+                            <td>
+                                <div>{{ req.address.address_line }}</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">{{ req.address.area }}, {{ req.address.city }}</div>
+                            </td>
+                            <td>
+                                <span class="badge badge-category-{{ req.waste_category }}">
+                                    {{ req.waste_category }}
+                                </span>
+                            </td>
+                            <td>
+                                <div>{{ req.scheduled_date.strftime('%d %b %Y') }}</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">{{ req.time_slot }}</div>
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('admin.assign_workers') }}" class="d-flex flex-column gap-2">
+                                    <input type="hidden" name="request_id" value="{{ req.id }}">
+                                    <div class="d-flex gap-2">
+                                        <select name="worker_id" class="form-select form-select-sm border-primary" required>
+                                            <option value="" disabled selected>Select Worker...</option>
+                                            {% for w in workers %}
+                                                <option value="{{ w.id }}">{{ w.name }} ({{ w.phone }})</option>
+                                            {% endfor %}
+                                        </select>
+                                        <select name="center_id" class="form-select form-select-sm border-warning" required>
+                                            <option value="" disabled selected>Drop-off Center...</option>
+                                            {% for c in centers %}
+                                                <option value="{{ c.id }}">{{ c.center_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-primary w-100 fw-semibold">
+                                        <i class="fa-solid fa-user-check me-1"></i> Confirm Allocation
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="fa-solid fa-circle-check text-success fa-3x mb-3"></i>
+            <h5>All current collection requests have been allocated!</h5>
+            <p class="small text-muted mb-0">Check back when households submit new pickup schedules.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

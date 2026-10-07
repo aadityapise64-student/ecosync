@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Log In — EcoSync{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow-sm border-0 p-4">
+            <div class="text-center mb-4">
+                <div class="rounded-circle bg-success-subtle text-success mx-auto d-flex align-items-center justify-content-center mb-2" style="width: 50px; height: 50px;">
+                    <i class="fa-solid fa-right-to-bracket fa-lg"></i>
+                </div>
+                <h4 class="fw-bold text-dark">Log In to EcoSync</h4>
+                <p class="text-muted small">Access your role dashboard and manage waste services</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fa-solid fa-envelope text-muted"></i></span>
+                        <input type="email" name="email" class="form-control" placeholder="name@example.com" value="{{ request.args.get('email', '') }}" required autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <label class="form-label small fw-semibold">Password</label>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fa-solid fa-lock text-muted"></i></span>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" value="{% if request.args.get('email') == 'admin@ecosync.com' %}admin123{% elif request.args.get('email') %}password123{% endif %}" required>
+                    </div>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="remember" id="rememberMe">
+                    <label class="form-check-label small text-muted" for="rememberMe">
+                        Remember me on this browser
+                    </label>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 mb-3">
+                    <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Sign In
+                </button>
+            </form>
+
+            <div class="border-top pt-3 text-center">
+                <p class="text-muted small mb-0">
+                    Don't have an account? <a href="{{ url_for('auth.register') }}" class="text-success fw-semibold">Register here</a>
+                </p>
+            </div>
+
+            <!-- Quick Demo Credentials Box -->
+            <div class="bg-light rounded p-3 mt-4 border">
+                <p class="small fw-semibold text-secondary mb-2">
+                    <i class="fa-solid fa-bolt text-warning me-1"></i> Quick Demo Logins (Click to Autofill):
+                </p>
+                <div class="d-flex flex-wrap gap-1">
+                    <a href="{{ url_for('auth.login', email='household@ecosync.com') }}" class="badge text-bg-primary text-decoration-none py-2 px-2">Household</a>
+                    <a href="{{ url_for('auth.login', email='worker@ecosync.com') }}" class="badge text-bg-info text-decoration-none py-2 px-2">Worker</a>
+                    <a href="{{ url_for('auth.login', email='center@ecosync.com') }}" class="badge text-bg-warning text-decoration-none py-2 px-2">Center</a>
+                    <a href="{{ url_for('auth.login', email='recycler@ecosync.com') }}" class="badge text-bg-success text-decoration-none py-2 px-2">Recycler</a>
+                    <a href="{{ url_for('auth.login', email='admin@ecosync.com') }}" class="badge text-bg-danger text-decoration-none py-2 px-2">Admin</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

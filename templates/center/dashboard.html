@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+
+{% block title %}Collection & Segregation Center — EcoSync{% endblock %}
+
+{% block content %}
+<!-- Facility Header Banner -->
+<div class="card shadow-sm border-0 p-4 mb-4 bg-white">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning px-3 py-1 fw-bold text-uppercase mb-2">
+                <i class="fa-solid fa-industry me-1"></i> Municipal Waste Recovery Facility
+            </span>
+            <h3 class="fw-bold text-dark mb-1">{{ center.center_name }}</h3>
+            <p class="text-muted small mb-0">
+                <i class="fa-solid fa-location-dot text-danger me-1"></i> {{ center.address }} •
+                <i class="fa-solid fa-clock text-secondary ms-2 me-1"></i> {{ center.operating_hours }} •
+                <i class="fa-solid fa-phone text-secondary ms-2 me-1"></i> {{ center.contact_number or 'No phone' }}
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <span class="badge bg-success px-3 py-2 fs-6">
+                <i class="fa-solid fa-scale-balanced me-1"></i> Weighbridge Active
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Facility Aggregate Metrics -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 border-0 shadow-sm">
+            <span class="text-muted small text-uppercase fw-semibold">Total Waste Processed</span>
+            <h3 class="fw-bold text-dark mb-0">{{ total_processed_kg }} <span class="fs-6 fw-normal text-muted">kg</span></h3>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 border-0 shadow-sm">
+            <span class="text-muted small text-uppercase fw-semibold">Recyclables Diverted</span>
+            <h3 class="fw-bold text-primary mb-0">{{ total_recyclable_kg }} <span class="fs-6 fw-normal text-muted">kg</span></h3>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 border-0 shadow-sm">
+            <span class="text-muted small text-uppercase fw-semibold">Organics (Compost)</span>
+            <h3 class="fw-bold text-success mb-0">{{ total_organic_kg }} <span class="fs-6 fw-normal text-muted">kg</span></h3>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 border-0 shadow-sm">
+            <span class="text-muted small text-uppercase fw-semibold">Reward Points Distributed</span>
+            <h3 class="fw-bold text-warning mb-0">{{ total_points_distributed }} <span class="fs-6 fw-normal text-muted">pts</span></h3>
+        </div>
+    </div>
+</div>
+
+<!-- Incoming Waste Queue (Awaiting Segregation) -->
+<div class="card border-0 shadow-sm p-4 mb-4">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+        <div>
+            <h5 class="fw-bold text-dark mb-0">
+                <i class="fa-solid fa-truck-ramp-box text-warning me-2"></i> Incoming Batches (Awaiting Segregation & Weighing)
+            </h5>
+            <p class="text-muted small mb-0">Delivered by workers to this facility (Status: At Center)</p>
+        </div>
+        <span class="badge bg-warning text-dark">{{ incoming_requests|length }} Pending Batches</span>
+    </div>
+
+    {% if incoming_requests %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>Req #</th>
+                        <th>Household</th>
+                        <th>Address</th>
+                        <th>Category</th>
+                        <th>Delivered By</th>
+                        <th>Scheduled Date</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for req in incoming_requests %}
+                        <tr>
+                            <td class="fw-bold">#{{ req.id }}</td>
+                            <td>
+                                <strong>{{ req.household.name }}</strong>
+                                <div class="text-muted" style="font-size: 0.75rem;">{{ req.household.phone or 'No phone' }}</div>
+                            </td>
+                            <td>{{ req.address.address_line }}, {{ req.address.area }}</td>
+                            <td>
+                                <span class="badge badge-category-{{ req.waste_category }}">
+                                    {{ req.waste_category }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if req.assignment %}
+                                    <span class="text-primary fw-semibold">{{ req.assignment.worker.name }}</span>
+                                {% else %}
+                                    <span class="text-muted">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ req.scheduled_date.strftime('%d %b %Y') }}</td>
+                            <td class="text-end">
+                                <a href="{{ url_for('center.segregate', request_id=req.id) }}" class="btn btn-sm btn-success fw-semibold shadow-sm">
+                                    <i class="fa-solid fa-scale-balanced me-1"></i> Weigh & Segregate
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="fa-solid fa-check-double text-success fa-2x mb-2"></i>
+            <p class="mb-0">No incoming batches awaiting segregation right now.</p>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Past Segregation Records Table -->
+<div class="card border-0 shadow-sm p-4">
+    <h5 class="fw-bold text-dark border-bottom pb-3 mb-3">
+        <i class="fa-solid fa-clipboard-list text-success me-2"></i> Facility Segregation & Routing Log
+    </h5>
+
+    {% if records %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Request #</th>
+                        <th>Recorded Date</th>
+                        <th>Recyclables</th>
+                        <th>Organic</th>
+                        <th>Hazardous / Residual</th>
+                        <th>Total Weight</th>
+                        <th>Reward Points</th>
+                        <th>Routed To</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in records %}
+                        <tr>
+                            <td class="fw-semibold text-secondary">#{{ r.id }}</td>
+                            <td>
+                                <a href="{{ url_for('household.request_detail', id=r.request_id) }}" class="fw-semibold text-decoration-none">
+                                    #{{ r.request_id }}
+                                </a>
+                            </td>
+                            <td>{{ r.recorded_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                            <td>
+                                <span class="badge bg-primary-subtle text-primary">
+                                    {{ r.total_recyclable_kg }} kg
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-success-subtle text-success">
+                                    {{ r.organic_kg }} kg
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    {{ r.hazardous_kg + r.non_recyclable_kg }} kg
+                                </span>
+                            </td>
+                            <td class="fw-bold text-dark">{{ r.total_weight_kg }} kg</td>
+                            <td class="fw-bold text-warning-emphasis">+{{ r.points_awarded }} pts</td>
+                            <td>
+                                <span class="badge bg-secondary">{{ r.routed_to }}</span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p class="text-muted small text-center py-3 mb-0">No past segregation records at this center.</p>
+    {% endif %}
+</div>
+{% endblock %}

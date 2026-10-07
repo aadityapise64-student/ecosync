@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Registered Users Directory — EcoSync Admin{% endblock %}
+
+{% block content %}
+<div class="row align-items-center mb-4">
+    <div class="col-md-8">
+        <h2 class="fw-bold text-dark mb-1">
+            Registered Users Directory 👥
+        </h2>
+        <p class="text-muted small mb-0">
+            Overview of all stakeholders in the municipal waste management network.
+        </p>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary btn-sm">
+            &larr; Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm p-4">
+    <div class="d-flex justify-content-between align-items-center border-bottom pb-3 mb-3">
+        <h5 class="fw-bold text-dark mb-0">
+            <i class="fa-solid fa-users text-primary me-2"></i> All System Users ({{ users|length }})
+        </h5>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light">
+                <tr>
+                    <th>User ID</th>
+                    <th>Name</th>
+                    <th>Email Address</th>
+                    <th>Role</th>
+                    <th>Phone</th>
+                    <th>Reward Balance</th>
+                    <th>Registered Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                    <tr>
+                        <td class="fw-semibold text-secondary">#{{ u.id }}</td>
+                        <td class="fw-bold text-dark">{{ u.name }}</td>
+                        <td>{{ u.email }}</td>
+                        <td>
+                            {% if u.role == 'household' %}
+                                <span class="badge bg-primary-subtle text-primary text-uppercase">Household</span>
+                            {% elif u.role == 'worker' %}
+                                <span class="badge bg-info-subtle text-info text-uppercase">Worker</span>
+                            {% elif u.role == 'center' %}
+                                <span class="badge bg-warning-subtle text-warning-emphasis text-uppercase">Center</span>
+                            {% elif u.role == 'recycler' %}
+                                <span class="badge bg-success-subtle text-success text-uppercase">Recycler</span>
+                            {% elif u.role == 'admin' %}
+                                <span class="badge bg-danger-subtle text-danger text-uppercase">Admin</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ u.phone or '-' }}</td>
+                        <td>
+                            {% if u.role == 'household' %}
+                                <span class="badge badge-reward">{{ u.reward_points }} pts</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ u.created_at.strftime('%d %b %Y') }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

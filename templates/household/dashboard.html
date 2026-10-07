@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+
+{% block title %}Household Dashboard — EcoSync{% endblock %}
+
+{% block content %}
+<!-- Top Header Banner -->
+<div class="row align-items-center mb-4">
+    <div class="col-md-7">
+        <h2 class="fw-bold text-dark mb-1">
+            Welcome, {{ current_user.name }}! 🏠
+        </h2>
+        <p class="text-muted small mb-0">
+            Household Waste Collection & Rewards Hub • Kolhapur Municipality Zone
+        </p>
+    </div>
+    <div class="col-md-5 text-md-end mt-3 mt-md-0 d-flex gap-2 justify-content-md-end">
+        <a href="{{ url_for('household.rewards') }}" class="btn btn-outline-warning text-dark fw-semibold shadow-sm">
+            <i class="fa-solid fa-coins text-warning me-1"></i> {{ current_user.reward_points }} Points
+        </a>
+        <a href="{{ url_for('household.new_request') }}" class="btn btn-primary shadow-sm">
+            <i class="fa-solid fa-calendar-plus me-1"></i> Schedule Pickup
+        </a>
+    </div>
+</div>
+
+<!-- Metrics Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 border-0 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Total Requests</span>
+                    <h3 class="fw-bold text-dark mb-0">{{ total_requests }}</h3>
+                </div>
+                <div class="p-3 bg-light rounded-circle text-primary">
+                    <i class="fa-solid fa-box-archive fa-lg"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 border-0 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">In Progress</span>
+                    <h3 class="fw-bold text-info mb-0">{{ active_requests }}</h3>
+                </div>
+                <div class="p-3 bg-info-subtle rounded-circle text-info">
+                    <i class="fa-solid fa-truck-fast fa-lg"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 border-0 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Completed & Segregated</span>
+                    <h3 class="fw-bold text-success mb-0">{{ completed_requests }}</h3>
+                </div>
+                <div class="p-3 bg-success-subtle rounded-circle text-success">
+                    <i class="fa-solid fa-circle-check fa-lg"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-lg-3">
+        <div class="card p-3 border-0 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small text-uppercase fw-semibold">Available Coupons</span>
+                    <h3 class="fw-bold text-warning mb-0">{{ available_coupons }}</h3>
+                </div>
+                <div class="p-3 bg-warning-subtle rounded-circle text-warning">
+                    <i class="fa-solid fa-tags fa-lg"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Section: Pickup Requests & Addresses -->
+<div class="row g-4">
+    <!-- Recent Requests Table -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm p-4">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-3">
+                <h5 class="fw-bold mb-0">
+                    <i class="fa-solid fa-clock-rotate-left text-success me-2"></i> Pickup Requests History
+                </h5>
+                <a href="{{ url_for('household.new_request') }}" class="btn btn-sm btn-outline-success">
+                    + New Pickup
+                </a>
+            </div>
+
+            {% if requests %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light small">
+                            <tr>
+                                <th>ID</th>
+                                <th>Category</th>
+                                <th>Date & Slot</th>
+                                <th>Address</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for req in requests %}
+                                <tr>
+                                    <td class="fw-semibold text-secondary">#{{ req.id }}</td>
+                                    <td>
+                                        <span class="badge badge-category-{{ req.waste_category }}">
+                                            {% if req.waste_category == 'Organic' %}🌱{% elif req.waste_category == 'Recyclable' %}♻️{% elif req.waste_category == 'Hazardous' %}⚠️{% else %}🗑️{% endif %}
+                                            {{ req.waste_category }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="small fw-semibold">{{ req.scheduled_date.strftime('%d %b %Y') }}</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">{{ req.time_slot }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="small text-truncate" style="max-width: 160px;" title="{{ req.address.address_line }}">
+                                            {{ req.address.address_line }}
+                                        </div>
+                                        <div class="text-muted" style="font-size: 0.75rem;">{{ req.address.area }}</div>
+                                    </td>
+                                    <td>
+                                        {% if req.status == 'Requested' %}
+                                            <span class="badge bg-secondary-subtle text-secondary border">Requested</span>
+                                        {% elif req.status == 'Assigned' %}
+                                            <span class="badge bg-info-subtle text-info border">Assigned</span>
+                                        {% elif req.status == 'Accepted' %}
+                                            <span class="badge bg-primary-subtle text-primary border">Accepted</span>
+                                        {% elif req.status == 'Collected' %}
+                                            <span class="badge bg-warning-subtle text-warning border">Collected</span>
+                                        {% elif req.status == 'At Center' %}
+                                            <span class="badge bg-danger-subtle text-danger border">At Center</span>
+                                        {% elif req.status == 'Segregated' %}
+                                            <span class="badge bg-success text-white">Segregated ✓</span>
+                                        {% else %}
+                                            <span class="badge bg-light text-muted border">{{ req.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{{ url_for('household.request_detail', id=req.id) }}" class="btn btn-sm btn-light border" title="View Full Lifecycle Progress">
+                                            <i class="fa-solid fa-timeline text-primary me-1"></i> Track
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-box-open text-muted fa-3x mb-3"></i>
+                    <h6>No pickup requests found yet.</h6>
+                    <p class="text-muted small">Schedule your first waste collection request to start earning reward points.</p>
+                    <a href="{{ url_for('household.new_request') }}" class="btn btn-success btn-sm">
+                        Schedule Waste Pickup
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Household Addresses Column -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm p-4 mb-4">
+            <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-3">
+                <h5 class="fw-bold mb-0">
+                    <i class="fa-solid fa-map-location-dot text-success me-2"></i> Saved Addresses
+                </h5>
+                <a href="{{ url_for('household.add_address') }}" class="btn btn-sm btn-outline-success">
+                    + Add
+                </a>
+            </div>
+
+            {% if addresses %}
+                <div class="d-flex flex-column gap-2">
+                    {% for addr in addresses %}
+                        <div class="p-3 bg-light rounded border">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="badge bg-success-subtle text-success">{{ addr.title }}</span>
+                                <span class="text-muted small">{{ addr.pincode }}</span>
+                            </div>
+                            <p class="small text-dark mb-0 fw-semibold">{{ addr.address_line }}</p>
+                            <p class="small text-muted mb-0">{{ addr.area }}, {{ addr.city }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-muted small">No address saved. Please add an address to request collections.</p>
+                <a href="{{ url_for('household.add_address') }}" class="btn btn-sm btn-outline-primary">
+                    Add Address Now
+                </a>
+            {% endif %}
+        </div>
+
+        <!-- Segregation Guidance Quick Card -->
+        <div class="card border-0 shadow-sm p-4 bg-success-subtle border border-success-subtle">
+            <h6 class="fw-bold text-success mb-2">
+                <i class="fa-solid fa-lightbulb me-1"></i> Segregation Tip
+            </h6>
+            <p class="small text-success-emphasis mb-2">
+                Recyclable dry items (plastics, metals, and cardboard) yield <strong>10 reward points/kg</strong> when segregated cleanly. Keep wet food waste in a separate organic bin!
+            </p>
+            <a href="{{ url_for('household.rewards') }}" class="small fw-bold text-success text-decoration-underline">
+                View Coupon Catalog &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
