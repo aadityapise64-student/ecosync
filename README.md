@@ -25,3 +25,11 @@ For an existing database created before migrations were added, back it up first.
 ## Free-tier deployment preparation
 
 `render.yaml` describes a Render free web service with a provider subdomain, HTTPS cookie setting, health check, and startup migration. Create the Supabase project separately. For a persistent Flask backend, use the Supabase **session pooler** connection string when direct database connections are unavailable from the host; configure `DATABASE_URL` with SSL required. Add `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, and the private bucket name as Render environment variables. Add the Roboflow API key only if live inference is configured. Keep the repository private if it contains project materials; connect Render to the repository through its Git provider integration. The first request after idle may be delayed because free Render services spin down. Supabase Free projects can pause after low activity and have usage quotas; export important data regularly. Render's free filesystem is ephemeral, so leave private object storage enabled for hosted uploads. Do not use this deployment for important personal data or depend on it as a permanent service.
+# Shared demo accounts
+
+The Render prototype provisions its five published demo identities through
+`provision_demo_accounts.py` after applying migrations. This operation is
+idempotent and does not drop or recreate tables. `ENABLE_DEMO_ACCOUNTS=true`
+must be set for it to run. These credentials are public and are for disposable
+demonstration data only; do not use this setup for a production service or store
+real personal data in the shared demo accounts.
