@@ -16,6 +16,7 @@
             </div>
 
             <form method="POST" action="{{ url_for('household.add_address') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="mb-3">
                     <label class="form-label small fw-semibold">Address Label / Title</label>
                     <input type="text" name="title" class="form-control" placeholder="e.g. Home, Parents House, Office" value="Home" required>

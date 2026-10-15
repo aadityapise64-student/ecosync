@@ -65,6 +65,8 @@
 
                             {% if current_user.reward_points >= coupon.points_cost %}
                                 <form method="POST" action="{{ url_for('household.redeem_coupon', coupon_id=coupon.id) }}" onsubmit="return confirm('Redeem this voucher for {{ coupon.points_cost }} points?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <input type="hidden" name="idempotency_key" value="{{ redemption_tokens[coupon.id] }}">
                                     <button type="submit" class="btn btn-sm btn-primary">
                                         Redeem Now
                                     </button>

@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: ecosync
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: flask --app app:create_app db upgrade && gunicorn --bind 0.0.0.0:$PORT 'app:create_app()'
+    healthCheckPath: /health
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "true"
+      - key: DATABASE_URL
+        sync: false
+      - key: REQUIRE_DATABASE_URL
+        value: "true"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SECRET_KEY
+        sync: false
+      - key: SUPABASE_STORAGE_BUCKET
+        value: user-media
+      - key: REQUIRE_CLOUD_STORAGE
+        value: "true"
+      - key: ROBOFLOW_API_KEY
+        sync: false
+      - key: ROBOFLOW_WORKSPACE
+        value: aaditya-pise
+      - key: ROBOFLOW_WORKFLOW_ID
+        value: general-segmentation-api-7
+      - key: ROBOFLOW_API_URL
+        value: https://serverless.roboflow.com
+      - key: ROBOFLOW_CLASSES
+        value: PAPER, PLASTIC, GLASS, METAL, CARDBOARD

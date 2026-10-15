@@ -7,10 +7,12 @@ from routes.auth import role_required
 recycler_bp = Blueprint('recycler', __name__)
 
 def get_current_recycler():
-    """Retrieve the recycler organization linked to current user or default recycler"""
+    """Return the logged-in recycler's organization; admins may inspect the first."""
     if current_user.recycler_profile:
         return current_user.recycler_profile
-    return RecyclerOrg.query.first()
+    if current_user.role == 'admin':
+        return RecyclerOrg.query.first()
+    return None
 
 @recycler_bp.route('/dashboard')
 @login_required
@@ -50,6 +52,10 @@ def receive_delivery(delivery_id):
         flash("Unauthorized access to this delivery batch.", "danger")
         return redirect(url_for('recycler.dashboard'))
 
+    if delivery.status != 'Dispatched':
+        flash("Only dispatched deliveries can be received.", "warning")
+        return redirect(url_for('recycler.dashboard'))
+
     notes = request.form.get('notes', 'Verified and weighed at recycling intake.').strip()
 
     try:
@@ -73,6 +79,10 @@ def process_delivery(delivery_id):
 
     if current_user.role != 'admin' and (not recycler or delivery.recycler_id != recycler.id):
         flash("Unauthorized access to this delivery batch.", "danger")
+        return redirect(url_for('recycler.dashboard'))
+
+    if delivery.status != 'Received':
+        flash("A delivery must be received before it can be processed.", "warning")
         return redirect(url_for('recycler.dashboard'))
 
     try:

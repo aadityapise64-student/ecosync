@@ -1,5 +1,5 @@
 from datetime import datetime, date, timedelta
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_required
 from sqlalchemy import func
 from models import (
@@ -237,3 +237,52 @@ def toggle_coupon(id):
 def view_users():
     users = User.query.order_by(User.created_at.desc()).all()
     return render_template('admin/users.html', users=users)
+
+@admin_bp.route('/users/create', methods=['POST'])
+@login_required
+@role_required(['admin'])
+def create_staff_user():
+    name = request.form.get('name', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    phone = request.form.get('phone', '').strip()
+    password = request.form.get('password', '')
+    role = request.form.get('role', '').strip().lower()
+
+    if not name or not email or role not in {'worker', 'center', 'recycler'}:
+        flash("Provide a name, email, and a supported staff role.", "warning")
+        return redirect(url_for('admin.view_users'))
+    if len(password) < 10:
+        flash("Staff passwords must be at least 10 characters long.", "warning")
+        return redirect(url_for('admin.view_users'))
+    if User.query.filter_by(email=email).first():
+        flash("An account with that email already exists.", "warning")
+        return redirect(url_for('admin.view_users'))
+
+    user = User(name=name, email=email, phone=phone, role=role, reward_points=0)
+    user.set_password(password)
+    if role == 'center':
+        center_name = request.form.get('organization_name', '').strip()
+        address = request.form.get('organization_address', '').strip()
+        if not center_name or not address:
+            flash("Center accounts require a center name and address.", "warning")
+            return redirect(url_for('admin.view_users'))
+        user.center_profile = CollectionCenter(
+            center_name=center_name, address=address, contact_number=phone
+        )
+    elif role == 'recycler':
+        org_name = request.form.get('organization_name', '').strip()
+        address = request.form.get('organization_address', '').strip()
+        if not org_name or not address:
+            flash("Recycler accounts require an organization name and address.", "warning")
+            return redirect(url_for('admin.view_users'))
+        user.recycler_profile = RecyclerOrg(org_name=org_name, address=address)
+
+    try:
+        db.session.add(user)
+        db.session.commit()
+        flash(f"{role.title()} account created for {email}.", "success")
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Staff account creation failed.")
+        flash("Could not create that account. Please verify the details and try again.", "danger")
+    return redirect(url_for('admin.view_users'))

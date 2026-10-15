@@ -15,14 +15,11 @@
             </div>
 
             <form method="POST" action="{{ url_for('auth.register') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="mb-3">
-                    <label class="form-label small fw-semibold">I am registering as <span class="text-danger">*</span></label>
-                    <select name="role" id="roleSelector" class="form-select border-success" onchange="toggleRoleFields()" required>
-                        <option value="household" selected>🏠 Household / Resident (Earn Reward Points)</option>
-                        <option value="worker">🚛 Pickup Worker (Collection Driver)</option>
-                        <option value="center">🏭 Collection & Segregation Facility</option>
-                        <option value="recycler">♻️ Recycling Organization Partner</option>
-                    </select>
+                    <label class="form-label small fw-semibold">Account type</label>
+                    <input class="form-control border-success" value="Household / Resident" disabled>
+                    <div class="form-text">Staff and partner accounts are created by an administrator.</div>
                 </div>
 
                 <div class="row g-2 mb-3">
@@ -66,36 +63,6 @@
                     </div>
                 </div>
 
-                <!-- Role specific: Center fields -->
-                <div id="centerFields" class="p-3 bg-light rounded border mb-3 d-none">
-                    <h6 class="fw-bold small text-warning mb-2">
-                        <i class="fa-solid fa-industry me-1"></i> Collection Facility Details
-                    </h6>
-                    <div class="mb-2">
-                        <label class="form-label small">Facility / Center Name</label>
-                        <input type="text" name="center_name" class="form-control form-control-sm" placeholder="MIDC Shiroli Segregation Yard">
-                    </div>
-                    <div>
-                        <label class="form-label small">Facility Address</label>
-                        <input type="text" name="center_address" class="form-control form-control-sm" placeholder="Plot 42, Industrial Estate">
-                    </div>
-                </div>
-
-                <!-- Role specific: Recycler fields -->
-                <div id="recyclerFields" class="p-3 bg-light rounded border mb-3 d-none">
-                    <h6 class="fw-bold small text-primary mb-2">
-                        <i class="fa-solid fa-recycle me-1"></i> Recycler Organization Details
-                    </h6>
-                    <div class="mb-2">
-                        <label class="form-label small">Recycling Company Name</label>
-                        <input type="text" name="org_name" class="form-control form-control-sm" placeholder="GreenEarth Materials Recovery">
-                    </div>
-                    <div>
-                        <label class="form-label small">Processing Plant Address</label>
-                        <input type="text" name="org_address" class="form-control form-control-sm" placeholder="Gokul Shirgaon Recycling Hub">
-                    </div>
-                </div>
-
                 <div class="row g-2 mb-3">
                     <div class="col-md-6">
                         <label class="form-label small fw-semibold">Password <span class="text-danger">*</span></label>
@@ -121,16 +88,4 @@
     </div>
 </div>
 
-<script>
-function toggleRoleFields() {
-    const role = document.getElementById('roleSelector').value;
-    const householdFields = document.getElementById('householdFields');
-    const centerFields = document.getElementById('centerFields');
-    const recyclerFields = document.getElementById('recyclerFields');
-
-    householdFields.classList.toggle('d-none', role !== 'household');
-    centerFields.classList.toggle('d-none', role !== 'center');
-    recyclerFields.classList.toggle('d-none', role !== 'recycler');
-}
-</script>
 {% endblock %}

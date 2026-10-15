@@ -10,10 +10,12 @@ from routes.auth import role_required
 center_bp = Blueprint('center', __name__)
 
 def get_current_center():
-    """Retrieve the collection center linked to the logged in center user or default center"""
+    """Return the logged-in center user's facility; admins may inspect the first facility."""
     if current_user.center_profile:
         return current_user.center_profile
-    return CollectionCenter.query.first()
+    if current_user.role == 'admin':
+        return CollectionCenter.query.first()
+    return None
 
 @center_bp.route('/dashboard')
 @login_required
@@ -25,7 +27,7 @@ def dashboard():
         return redirect(url_for('index'))
 
     # Incoming requests: delivered to this center or unassigned destination, awaiting segregation
-    incoming_requests = PickupRequest.query\
+    incoming_query = PickupRequest.query\
         .join(WorkerAssignment, PickupRequest.id == WorkerAssignment.request_id, isouter=True)\
         .options(
             db.joinedload(PickupRequest.household),
@@ -33,8 +35,8 @@ def dashboard():
             db.joinedload(PickupRequest.assignment).joinedload(WorkerAssignment.worker)
         )\
         .filter(PickupRequest.status == 'At Center')\
-        .filter((WorkerAssignment.center_id == center.id) | (WorkerAssignment.center_id.is_(None)))\
-        .order_by(PickupRequest.created_at.desc()).all()
+        .filter(WorkerAssignment.center_id == center.id)
+    incoming_requests = incoming_query.order_by(PickupRequest.created_at.desc()).all()
 
     # Past segregation records at this center
     records = SegregationRecord.query.filter_by(center_id=center.id)\
@@ -79,7 +81,14 @@ def segregate(request_id):
     pickup = PickupRequest.query.options(
         db.joinedload(PickupRequest.household),
         db.joinedload(PickupRequest.address)
-    ).filter_by(id=request_id).first_or_404()
+    ).filter_by(id=request_id).with_for_update().first_or_404()
+
+    # A center account may only process pickups assigned to its own facility.
+    if current_user.role != 'admin':
+        assignment = pickup.assignment
+        if not assignment or assignment.center_id != center.id:
+            flash("This pickup is not assigned to your collection center.", "danger")
+            return redirect(url_for('center.dashboard'))
     
     recyclers = RecyclerOrg.query.order_by(RecyclerOrg.org_name.asc()).all()
 
@@ -169,7 +178,7 @@ def segregate(request_id):
             # If routed to Recycler Org, create RecyclerDelivery dispatch
             total_recyclable = plastic_kg + metal_kg + glass_kg + paper_kg
             if routed_to == 'Recycler Org' and total_recyclable > 0:
-                recycler = db.session.get(RecyclerOrg, recycler_id) if recycler_id else RecyclerOrg.query.first()
+                recycler = db.session.get(RecyclerOrg, recycler_id) if recycler_id else None
                 if recycler:
                     summary_parts = []
                     if plastic_kg > 0: summary_parts.append(f"{round(plastic_kg, 1)}kg Plastic")

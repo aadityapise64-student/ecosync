@@ -15,6 +15,8 @@
             </div>
 
             <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if request.args.get('next') %}<input type="hidden" name="next" value="{{ request.args.get('next') }}">{% endif %}
                 <div class="mb-3">
                     <label class="form-label small fw-semibold">Email Address</label>
                     <div class="input-group">
@@ -29,7 +31,7 @@
                     </div>
                     <div class="input-group">
                         <span class="input-group-text bg-light"><i class="fa-solid fa-lock text-muted"></i></span>
-                        <input type="password" name="password" class="form-control" placeholder="••••••••" value="{% if request.args.get('email') == 'admin@ecosync.com' %}admin123{% elif request.args.get('email') %}password123{% endif %}" required>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
                     </div>
                 </div>
 
@@ -51,19 +53,6 @@
                 </p>
             </div>
 
-            <!-- Quick Demo Credentials Box -->
-            <div class="bg-light rounded p-3 mt-4 border">
-                <p class="small fw-semibold text-secondary mb-2">
-                    <i class="fa-solid fa-bolt text-warning me-1"></i> Quick Demo Logins (Click to Autofill):
-                </p>
-                <div class="d-flex flex-wrap gap-1">
-                    <a href="{{ url_for('auth.login', email='household@ecosync.com') }}" class="badge text-bg-primary text-decoration-none py-2 px-2">Household</a>
-                    <a href="{{ url_for('auth.login', email='worker@ecosync.com') }}" class="badge text-bg-info text-decoration-none py-2 px-2">Worker</a>
-                    <a href="{{ url_for('auth.login', email='center@ecosync.com') }}" class="badge text-bg-warning text-decoration-none py-2 px-2">Center</a>
-                    <a href="{{ url_for('auth.login', email='recycler@ecosync.com') }}" class="badge text-bg-success text-decoration-none py-2 px-2">Recycler</a>
-                    <a href="{{ url_for('auth.login', email='admin@ecosync.com') }}" class="badge text-bg-danger text-decoration-none py-2 px-2">Admin</a>
-                </div>
-            </div>
         </div>
     </div>
 </div>
