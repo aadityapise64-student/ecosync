@@ -23,6 +23,7 @@
                     </a>
                     {% if pickup.status in ['Requested', 'Assigned'] %}
                         <form method="POST" action="{{ url_for('household.cancel_request', id=pickup.id) }}" onsubmit="return confirm('Are you sure you want to cancel this request?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button type="submit" class="btn btn-sm btn-outline-danger">Cancel Request</button>
                         </form>
                     {% endif %}
@@ -108,13 +109,77 @@
                 </div>
             </div>
 
-            <!-- Uploaded Photo Reference if exists -->
+            <!-- Uploaded Waste Photo & AI Computer Vision Detection Card -->
             {% if pickup.photo_filename %}
-                <div class="mt-4 pt-3 border-top">
-                    <h6 class="fw-bold text-dark mb-2">
-                        <i class="fa-solid fa-image text-muted me-1"></i> Uploaded Waste Reference Photo
-                    </h6>
-                    <img src="{{ url_for('static', filename='uploads/' + pickup.photo_filename) }}" alt="Waste Photo" class="img-thumbnail" style="max-height: 220px;">
+                <div class="card mt-4 border-success border-opacity-50 shadow-sm">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <h6 class="fw-bold mb-0 text-success">
+                                <i class="fa-solid fa-microchip me-1"></i> AI Waste Classification & Reward
+                            </h6>
+                            <span class="small text-muted">Powered by Roboflow Computer Vision</span>
+                        </div>
+                        {% if pickup.ai_points_awarded and pickup.ai_points_awarded > 0 %}
+                            <span class="badge bg-warning text-dark fw-bold px-3 py-2 fs-6">
+                                <i class="fa-solid fa-coins me-1"></i> +{{ pickup.ai_points_awarded }} Points Earned
+                            </span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-4 align-items-center">
+                            <!-- Photos (Annotated or Original) -->
+                            <div class="col-md-5 text-center">
+                                {% if pickup.ai_annotated_photo %}
+                                    <div class="position-relative">
+                                        <img src="{{ url_for('serve_user_media', filename=pickup.ai_annotated_photo) }}" alt="AI Annotated Waste" class="img-fluid rounded border shadow-sm" style="max-height: 240px; object-fit: contain;">
+                                        <div class="small text-muted mt-1">
+                                            <i class="fa-solid fa-draw-polygon text-success me-1"></i> AI Bounding Boxes & Classes
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <img src="{{ url_for('serve_user_media', filename=pickup.photo_filename) }}" alt="Waste Photo" class="img-fluid rounded border shadow-sm" style="max-height: 240px; object-fit: contain;">
+                                    <div class="small text-muted mt-1">Uploaded Reference Photo</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Classification Breakdown -->
+                            <div class="col-md-7">
+                                {% if pickup.ai_summary %}
+                                    <div class="alert alert-success py-2 px-3 small mb-3">
+                                        <i class="fa-solid fa-circle-check text-success me-1"></i>
+                                        <strong>AI Analysis:</strong> {{ pickup.ai_summary }}
+                                    </div>
+                                {% endif %}
+
+                                {% set ai_items = pickup.ai_breakdown_dict %}
+                                {% if ai_items %}
+                                    <h6 class="fw-bold text-dark small text-uppercase mb-2">Detected Recyclable Materials:</h6>
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        {% for cls, count in ai_items.items() %}
+                                            {% if cls == 'PLASTIC' %}
+                                                <span class="badge bg-primary px-3 py-2 fs-7">♻️ Plastic: {{ count }} item(s)</span>
+                                            {% elif cls == 'GLASS' %}
+                                                <span class="badge bg-info text-dark px-3 py-2 fs-7">🍾 Glass: {{ count }} item(s)</span>
+                                            {% elif cls == 'METAL' %}
+                                                <span class="badge bg-warning text-dark px-3 py-2 fs-7">🥫 Metal: {{ count }} item(s)</span>
+                                            {% elif cls == 'PAPER' or cls == 'CARDBOARD' %}
+                                                <span class="badge bg-success px-3 py-2 fs-7">📦 {{ cls.capitalize() }}: {{ count }} item(s)</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary px-3 py-2 fs-7">🗑️ {{ cls }}: {{ count }} item(s)</span>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted small mb-3">Photo submitted for municipal pickup reference.</p>
+                                {% endif %}
+
+                                <div class="bg-light p-2 rounded small text-muted">
+                                    <i class="fa-solid fa-leaf text-success me-1"></i>
+                                    Doorstep segregation helps reduce city landfill burden by up to <strong>70%</strong>. Thank you for sorting your waste!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             {% endif %}
 

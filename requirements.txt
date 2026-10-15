@@ -1,0 +1,12 @@
+Flask>=3.0,<4.0
+Flask-Login>=0.6,<1.0
+Flask-Limiter>=3.8,<5.0
+Flask-Migrate>=4.0,<5.0
+Flask-SQLAlchemy>=3.1,<4.0
+Flask-WTF>=1.2,<2.0
+Pillow>=12.3.0,<13.0
+inference-sdk>=1.7.4,<2.0
+python-dotenv>=1.0,<2.0
+requests>=2.31,<3.0
+psycopg[binary]>=3.2,<4.0
+gunicorn>=22.0,<24.0; platform_system != "Windows"

@@ -10,13 +10,15 @@ worker_bp = Blueprint('worker', __name__)
 @role_required(['worker', 'admin'])
 def dashboard():
     # Fetch assignments for current worker with eager-loaded relationships to prevent N+1 queries
-    assignments = WorkerAssignment.query.filter_by(worker_id=current_user.id)\
+    assignments_query = WorkerAssignment.query\
         .options(
             db.joinedload(WorkerAssignment.request).joinedload(PickupRequest.household),
             db.joinedload(WorkerAssignment.request).joinedload(PickupRequest.address),
             db.joinedload(WorkerAssignment.destination_center)
-        )\
-        .order_by(WorkerAssignment.assigned_at.desc()).all()
+        )
+    if current_user.role != 'admin':
+        assignments_query = assignments_query.filter_by(worker_id=current_user.id)
+    assignments = assignments_query.order_by(WorkerAssignment.assigned_at.desc()).all()
     
     # Active tasks (Assigned, Accepted, Collected)
     active_assignments = [a for a in assignments if a.request and a.request.status in ['Assigned', 'Accepted', 'Collected']]
@@ -36,13 +38,16 @@ def dashboard():
 @login_required
 @role_required(['worker', 'admin'])
 def accept_task(request_id):
-    assignment = WorkerAssignment.query.filter_by(request_id=request_id).first_or_404()
+    assignment = WorkerAssignment.query.filter_by(request_id=request_id).with_for_update().first_or_404()
     if current_user.role != 'admin' and assignment.worker_id != current_user.id:
         flash("Unauthorized task.", "danger")
         return redirect(url_for('worker.dashboard'))
 
     if not assignment.request or assignment.request.status == 'Cancelled':
         flash("This pickup request has been cancelled.", "warning")
+        return redirect(url_for('worker.dashboard'))
+    if assignment.request.status != 'Assigned':
+        flash("This task is not ready to be accepted.", "warning")
         return redirect(url_for('worker.dashboard'))
 
     try:
@@ -61,13 +66,16 @@ def accept_task(request_id):
 @login_required
 @role_required(['worker', 'admin'])
 def collect_task(request_id):
-    assignment = WorkerAssignment.query.filter_by(request_id=request_id).first_or_404()
+    assignment = WorkerAssignment.query.filter_by(request_id=request_id).with_for_update().first_or_404()
     if current_user.role != 'admin' and assignment.worker_id != current_user.id:
         flash("Unauthorized task.", "danger")
         return redirect(url_for('worker.dashboard'))
 
     if not assignment.request or assignment.request.status == 'Cancelled':
         flash("This pickup request has been cancelled.", "warning")
+        return redirect(url_for('worker.dashboard'))
+    if assignment.request.status != 'Accepted':
+        flash("Only an accepted task can be marked collected.", "warning")
         return redirect(url_for('worker.dashboard'))
 
     try:
@@ -86,9 +94,13 @@ def collect_task(request_id):
 @login_required
 @role_required(['worker', 'admin'])
 def deliver_to_center(request_id):
-    assignment = WorkerAssignment.query.filter_by(request_id=request_id).first_or_404()
+    assignment = WorkerAssignment.query.filter_by(request_id=request_id).with_for_update().first_or_404()
     if current_user.role != 'admin' and assignment.worker_id != current_user.id:
         flash("Unauthorized task.", "danger")
+        return redirect(url_for('worker.dashboard'))
+
+    if not assignment.request or assignment.request.status != 'Collected':
+        flash("Only a collected task can be delivered to a center.", "warning")
         return redirect(url_for('worker.dashboard'))
 
     center_id = request.form.get('center_id', type=int)
@@ -99,6 +111,9 @@ def deliver_to_center(request_id):
     center = db.session.get(CollectionCenter, center_id)
     if not center:
         flash("Selected collection center does not exist.", "warning")
+        return redirect(url_for('worker.dashboard'))
+    if current_user.role != 'admin' and assignment.center_id and assignment.center_id != center.id:
+        flash("This task is assigned to a different collection center.", "danger")
         return redirect(url_for('worker.dashboard'))
 
     try:

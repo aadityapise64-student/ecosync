@@ -1,8 +1,9 @@
 import re
 from functools import wraps
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, current_app
 from flask_login import login_user, logout_user, login_required, current_user
-from models import db, User, Address, CollectionCenter, RecyclerOrg
+from models import db, User, Address
+from extensions import limiter
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -16,13 +17,13 @@ def role_required(allowed_roles):
             if not current_user.is_authenticated:
                 return redirect(url_for('auth.login', next=request.url))
             if current_user.role not in allowed_roles:
-                flash(f"Access denied: This section requires {', '.join(allowed_roles)} privileges.", "danger")
-                return redirect(url_for('index'))
+                abort(403)
             return f(*args, **kwargs)
         return decorated_function
     return decorator
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute', methods=['POST'], error_message='Too many login attempts. Please wait a minute and try again.')
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
@@ -42,8 +43,8 @@ def login():
             flash(f"Welcome back, {user.name}!", "success")
             
             # Next URL redirect safety: ensure local relative path only
-            next_page = request.args.get('next')
-            if next_page and next_page.startswith('/') and not next_page.startswith('//'):
+            next_page = request.args.get('next') or request.form.get('next')
+            if next_page and next_page.startswith('/') and not next_page.startswith('//') and '\\' not in next_page:
                 return redirect(next_page)
             return redirect(url_for('index'))
         else:
@@ -62,7 +63,9 @@ def register():
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
         phone = request.form.get('phone', '').strip()
-        role = request.form.get('role', 'household').strip().lower()
+        # Public self-registration must never grant privileged roles. Staff and
+        # admin accounts should be provisioned through a controlled process.
+        role = 'household'
 
         # Validation
         if not name or not email or not password:
@@ -73,8 +76,8 @@ def register():
             flash("Please enter a valid email address.", "warning")
             return render_template('auth/register.html')
 
-        if len(password) < 6:
-            flash("Password must be at least 6 characters long.", "warning")
+        if len(password) < 10:
+            flash("Password must be at least 10 characters long.", "warning")
             return render_template('auth/register.html')
 
         if password != confirm_password:
@@ -84,9 +87,6 @@ def register():
         if User.query.filter_by(email=email).first():
             flash("An account with this email address already exists. Please log in.", "warning")
             return redirect(url_for('auth.login'))
-
-        if role not in ['household', 'worker', 'center', 'recycler', 'admin']:
-            role = 'household'
 
         try:
             # Create user
@@ -118,41 +118,19 @@ def register():
                     )
                     db.session.add(address)
 
-            # If center role, create facility profile
-            elif role == 'center':
-                center_name = request.form.get('center_name', f"{name}'s Waste Segregation Center").strip()
-                center_addr = request.form.get('center_address', 'Kolhapur Industrial Area').strip()
-                center = CollectionCenter(
-                    user_id=new_user.id,
-                    center_name=center_name or f"{name}'s Waste Segregation Center",
-                    address=center_addr or 'Kolhapur Industrial Area',
-                    contact_number=phone
-                )
-                db.session.add(center)
-
-            # If recycler role, create recycler organization profile
-            elif role == 'recycler':
-                org_name = request.form.get('org_name', f"{name} Materials Recovery").strip()
-                org_addr = request.form.get('org_address', 'Kolhapur Recovery Park').strip()
-                recycler = RecyclerOrg(
-                    user_id=new_user.id,
-                    org_name=org_name or f"{name} Materials Recovery",
-                    address=org_addr or 'Kolhapur Recovery Park'
-                )
-                db.session.add(recycler)
-
             db.session.commit()
             flash("Account successfully created! Please log in with your credentials.", "success")
             return redirect(url_for('auth.login'))
 
-        except Exception as e:
+        except Exception:
             db.session.rollback()
+            current_app.logger.exception("Account creation failed.")
             flash("An unexpected error occurred during account creation. Please try again.", "danger")
             return render_template('auth/register.html')
 
     return render_template('auth/register.html')
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()

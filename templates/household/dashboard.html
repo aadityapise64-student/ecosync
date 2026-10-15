@@ -14,6 +14,9 @@
         </p>
     </div>
     <div class="col-md-5 text-md-end mt-3 mt-md-0 d-flex gap-2 justify-content-md-end">
+        <a href="{{ url_for('household.ai_scanner') }}" class="btn btn-outline-success fw-semibold shadow-sm">
+            <i class="fa-solid fa-microchip me-1"></i> AI Scanner
+        </a>
         <a href="{{ url_for('household.rewards') }}" class="btn btn-outline-warning text-dark fw-semibold shadow-sm">
             <i class="fa-solid fa-coins text-warning me-1"></i> {{ current_user.reward_points }} Points
         </a>
@@ -78,6 +81,24 @@
                     <i class="fa-solid fa-tags fa-lg"></i>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- AI Trash Detection Promo Card -->
+<div class="card border-0 shadow-sm mb-4 text-white overflow-hidden" style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); border-radius: 12px;">
+    <div class="card-body p-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+            <span class="badge bg-white text-success fw-bold text-uppercase px-2 py-1 mb-2">
+                <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Smart Sorting
+            </span>
+            <h4 class="fw-bold mb-1">Scan Trash with AI & Earn Instant EcoPoints!</h4>
+            <p class="mb-0 opacity-90 small">Upload a photo of your plastic bottles, metal cans, glass, or cardboard to detect trash types and earn rewards before pickup.</p>
+        </div>
+        <div>
+            <a href="{{ url_for('household.ai_scanner') }}" class="btn btn-light text-success fw-bold px-4 py-2 rounded-pill shadow-sm">
+                <i class="fa-solid fa-camera me-1"></i> Launch AI Scanner
+            </a>
         </div>
     </div>
 </div>

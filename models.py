@@ -110,10 +110,27 @@ class PickupRequest(db.Model):
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
 
+    # AI Trash Detection & Rewards Fields
+    ai_detected_items = db.Column(db.Text, nullable=True)  # JSON-encoded class counts (e.g. {"PLASTIC": 2, "GLASS": 1})
+    ai_total_items = db.Column(db.Integer, default=0, nullable=True)
+    ai_points_awarded = db.Column(db.Integer, default=0, nullable=True)
+    ai_annotated_photo = db.Column(db.String(255), nullable=True)
+    ai_summary = db.Column(db.String(255), nullable=True)
+
     # Relationships
     address = db.relationship('Address', backref='requests', lazy=True)
     assignment = db.relationship('WorkerAssignment', backref='request', uselist=False, lazy=True, cascade='all, delete-orphan')
     segregation_record = db.relationship('SegregationRecord', backref='request', uselist=False, lazy=True, cascade='all, delete-orphan')
+
+    @property
+    def ai_breakdown_dict(self):
+        import json
+        if not self.ai_detected_items:
+            return {}
+        try:
+            return json.loads(self.ai_detected_items)
+        except Exception:
+            return {}
 
     def __repr__(self):
         return f'<PickupRequest #{self.id} - {self.waste_category} ({self.status})>'
@@ -208,12 +225,49 @@ class Coupon(db.Model):
         return f'<Coupon {self.code} - {self.title}>'
 
 
+class AIScan(db.Model):
+    __tablename__ = 'ai_scans'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
+    original_filename = db.Column(db.String(255), nullable=False)
+    annotated_filename = db.Column(db.String(255), nullable=True)
+    status = db.Column(db.String(20), nullable=False, index=True)  # live, demo, failed
+    model_version = db.Column(db.String(120), nullable=True)
+    predictions_json = db.Column(db.Text, nullable=False, default='[]')
+    class_counts_json = db.Column(db.Text, nullable=False, default='{}')
+    points_awarded = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, default=utc_now, nullable=False)
+    claimed_at = db.Column(db.DateTime, nullable=True)
+
+    user = db.relationship('User', backref=db.backref('ai_scans', lazy=True, cascade='all, delete-orphan'))
+
+    @property
+    def predictions(self):
+        import json
+        try:
+            return json.loads(self.predictions_json)
+        except (TypeError, ValueError):
+            return []
+
+    @property
+    def class_counts(self):
+        import json
+        try:
+            return json.loads(self.class_counts_json)
+        except (TypeError, ValueError):
+            return {}
+
+
 class RewardTransaction(db.Model):
     __tablename__ = 'reward_transactions'
+    __table_args__ = (db.UniqueConstraint('idempotency_key', name='uq_reward_transactions_idempotency_key'),)
 
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, index=True)
     coupon_id = db.Column(db.Integer, db.ForeignKey('coupons.id'), nullable=True, index=True)
+    ai_scan_id = db.Column(db.Integer, db.ForeignKey('ai_scans.id'), unique=True, nullable=True, index=True)
+    idempotency_key = db.Column(db.String(96), nullable=True)
     transaction_type = db.Column(db.String(20), nullable=False, index=True)  # EARNED, REDEEMED
     points = db.Column(db.Integer, nullable=False)
     description = db.Column(db.String(255), nullable=False)

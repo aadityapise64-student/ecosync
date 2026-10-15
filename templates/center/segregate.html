@@ -43,7 +43,7 @@
                 {% if pickup.photo_filename %}
                     <div class="mt-2 pt-2 border-top">
                         <span class="text-muted small me-2">Reference Photo:</span>
-                        <a href="{{ url_for('static', filename='uploads/' + pickup.photo_filename) }}" target="_blank" class="small text-primary">
+                        <a href="{{ url_for('serve_user_media', filename=pickup.photo_filename) }}" target="_blank" class="small text-primary">
                             <i class="fa-solid fa-image me-1"></i> View Uploaded Image
                         </a>
                     </div>
@@ -52,6 +52,7 @@
 
             <!-- Segregation Weights Entry Form -->
             <form method="POST" action="{{ url_for('center.segregate', request_id=pickup.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <h5 class="fw-bold text-dark mb-3">1. Measured Material Weights (in kg)</h5>
                 
                 <!-- Recyclables Group -->

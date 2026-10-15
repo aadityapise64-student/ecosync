@@ -27,6 +27,7 @@
                 <i class="fa-solid fa-plus text-success me-1"></i> Add New Voucher Offer
             </h5>
             <form method="POST" action="{{ url_for('admin.manage_coupons') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="mb-2">
                     <label class="form-label small fw-semibold">Coupon Code <span class="text-danger">*</span></label>
                     <input type="text" name="code" class="form-control form-control-sm text-uppercase" placeholder="e.g. ECO50, RECYCLE10" required>
@@ -121,6 +122,7 @@
                                 </td>
                                 <td class="text-end">
                                     <form method="POST" action="{{ url_for('admin.toggle_coupon', id=c.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="btn btn-sm btn-outline-secondary">
                                             {{ 'Deactivate' if c.is_active else 'Activate' }}
                                         </button>

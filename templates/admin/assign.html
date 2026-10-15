@@ -63,6 +63,7 @@
                             </td>
                             <td>
                                 <form method="POST" action="{{ url_for('admin.assign_workers') }}" class="d-flex flex-column gap-2">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <input type="hidden" name="request_id" value="{{ req.id }}">
                                     <div class="d-flex gap-2">
                                         <select name="worker_id" class="form-select form-select-sm border-primary" required>

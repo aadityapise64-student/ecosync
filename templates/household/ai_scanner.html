@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Trash Scanner & Rewards — EcoSync{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center py-4">
+    <div class="col-lg-9">
+        <!-- Header Banner -->
+        <div class="card shadow-sm border-0 mb-4 bg-gradient p-4 text-white" style="background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%); border-radius: 16px;">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <span class="badge bg-white text-success fw-bold text-uppercase px-3 py-1 mb-2">
+                        <i class="fa-solid fa-microchip me-1"></i> AI Computer Vision
+                    </span>
+                    <h2 class="fw-bold mb-1">AI Smart Trash Scanner</h2>
+                    <p class="mb-0 opacity-90 small">
+                        Upload or snap a photo of your waste. Our AI detects and segregates <strong>Plastic, Glass, Metal, Paper & Cardboard</strong> in real-time and awards EcoPoints!
+                    </p>
+                </div>
+                <div class="text-end">
+                    <div class="p-3 bg-white bg-opacity-25 rounded-3 text-center">
+                        <div class="small text-uppercase fw-semibold">Your Balance</div>
+                        <h3 class="fw-bold mb-0"><i class="fa-solid fa-coins text-warning me-1"></i>{{ current_user.reward_points }} pts</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scanner Card -->
+        <div class="card shadow-sm border-0 p-4 mb-4" style="border-radius: 16px;">
+            <form method="POST" action="{{ url_for('household.ai_scanner') }}" enctype="multipart/form-data" id="scannerForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-uppercase text-muted">Upload Trash Photo for AI Classification</label>
+
+                    <div class="border border-2 border-dashed rounded-3 p-4 text-center bg-light position-relative" id="dropArea" style="cursor: pointer; border-color: #10b981 !important;">
+                        <input type="file" name="photo" id="scannerPhotoInput" class="position-absolute top-0 start-0 w-100 h-100 opacity-0" accept="image/*" required onchange="handleFileSelect(event)">
+
+                        <div id="uploadPrompt">
+                            <div class="mb-3">
+                                <span class="badge rounded-circle p-3 bg-success bg-opacity-10 text-success">
+                                    <i class="fa-solid fa-cloud-arrow-up fa-2x"></i>
+                                </span>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-1">Click to Upload or Drag & Drop Trash Photo</h5>
+                            <p class="text-muted small mb-2">Supported formats: JPG, PNG, JPEG, WEBP (Max 16 MB)</p>
+                            <span class="btn btn-sm btn-outline-success px-4 rounded-pill">
+                                <i class="fa-solid fa-camera me-1"></i> Select Photo
+                            </span>
+                        </div>
+
+                        <!-- Live Selected Preview -->
+                        <div id="scannerPreviewBox" class="d-none">
+                            <img id="scannerPreviewImg" src="" alt="Trash Preview" class="img-fluid rounded shadow-sm mb-3" style="max-height: 280px; object-fit: contain;">
+                            <div>
+                                <span class="btn btn-sm btn-outline-secondary rounded-pill me-2" onclick="resetFileSelect(event)">
+                                    <i class="fa-solid fa-arrow-rotate-left me-1"></i> Choose Another Photo
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn btn-success btn-lg w-100 py-3 rounded-pill fw-semibold shadow-sm" id="analyzeBtn">
+                    <i class="fa-solid fa-wand-magic-sparkles me-2"></i> Run AI Model & Detect Trash
+                </button>
+            </form>
+        </div>
+
+        <!-- Detection Results View (If scanned) -->
+        {% if result %}
+        <div class="card shadow-sm border-0 p-4 mb-4 border-success border-2" style="border-radius: 16px;">
+            <div class="d-flex flex-wrap align-items-center justify-content-between border-bottom pb-3 mb-4 gap-2">
+                <div>
+                    <span class="badge {% if result.success and not result.is_simulated %}bg-success-subtle text-success{% elif result.is_simulated %}bg-warning-subtle text-dark{% else %}bg-danger-subtle text-danger{% endif %} fw-bold text-uppercase px-3 py-1">
+                        {% if result.success and not result.is_simulated %}{% if result.total_items > 0 %}Live classification{% else %}Live scan complete{% endif %}{% elif result.is_simulated %}Demo result{% else %}Scan unavailable{% endif %}
+                    </span>
+                    <h4 class="fw-bold text-dark mb-0 mt-2">AI Detection Breakdown</h4>
+                </div>
+                {% if result.success and not result.is_simulated %}<div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-warning text-dark fw-bold px-3 py-2 fs-6">
+                        {% if result.points_awarded > 0 %}+{{ result.points_awarded }} Points Value{% else %}0 Points - No eligible detections{% endif %}
+                    </span>
+                </div>{% endif %}
+            </div>
+
+            <div class="row g-4 mb-4">
+                <!-- Annotated Image -->
+                <div class="col-md-6 text-center">
+                    <div class="bg-light p-2 rounded-3 border">
+                        <h6 class="fw-bold small text-muted text-uppercase mb-2">
+                            <i class="fa-solid fa-eye me-1"></i> Model Object Bounding Boxes
+                        </h6>
+                        {% if result.annotated_image %}
+                            <img src="{{ url_for('serve_user_media', filename=result.annotated_image) }}" alt="Annotated Trash" class="img-fluid rounded shadow-sm" style="max-height: 320px; object-fit: contain;">
+                        {% elif uploaded_photo %}
+                            <img src="{{ url_for('serve_user_media', filename=uploaded_photo) }}" alt="Uploaded Trash" class="img-fluid rounded shadow-sm" style="max-height: 320px; object-fit: contain;">
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Metrics & Class Breakdown -->
+                <div class="col-md-6">
+                    <div class="p-3 bg-light rounded-3 border h-100 d-flex flex-column justify-content-between">
+                        <div>
+                            <h6 class="fw-bold text-dark text-uppercase small border-bottom pb-2 mb-3">
+                                <i class="fa-solid fa-chart-pie text-success me-1"></i> Detected Materials ({{ result.total_items }} Total Items)
+                            </h6>
+
+                            {% if result.class_counts %}
+                                <div class="list-group list-group-flush mb-3">
+                                    {% for cls_name, count in result.class_counts.items() %}
+                                        <div class="list-group-item bg-transparent px-0 d-flex justify-content-between align-items-center py-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                {% if cls_name == 'PLASTIC' %}
+                                                    <span class="badge bg-primary rounded-pill px-3 py-2">♻️ Plastic</span>
+                                                {% elif cls_name == 'GLASS' %}
+                                                    <span class="badge bg-info text-dark rounded-pill px-3 py-2">🍾 Glass</span>
+                                                {% elif cls_name == 'METAL' %}
+                                                    <span class="badge bg-warning text-dark rounded-pill px-3 py-2">🥫 Metal</span>
+                                                {% elif cls_name == 'PAPER' or cls_name == 'CARDBOARD' %}
+                                                    <span class="badge bg-success rounded-pill px-3 py-2">📦 {{ cls_name.capitalize() }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary rounded-pill px-3 py-2">🗑️ {{ cls_name }}</span>
+                                                {% endif %}
+                                                <span class="fw-semibold text-dark">{{ count }} item(s)</span>
+                                            </div>
+                                            <span class="text-success fw-bold small">
+                                                +{{ result.points_breakdown.get(cls_name, 0) }} pts
+                                            </span>
+                                        </div>
+                                    {% endfor %}
+                                    {% if result.success and not result.is_simulated %}<div class="list-group-item bg-transparent px-0 d-flex justify-content-between align-items-center py-2 border-top">
+                                        <span class="text-muted small">📸 Waste Photo Participation Bonus</span>
+                                        <span class="text-success fw-bold small">+5 pts</span>
+                                    </div>{% endif %}
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info py-2 small mb-3">
+                                    {% if result.success and not result.is_simulated %}{{ result.summary }}{% else %}No supported waste detections are available for this scan.{% endif %}
+                                </div>
+                            {% endif %}
+
+                            {% if result.success and not result.is_simulated and result.class_counts %}<div class="alert alert-success d-flex align-items-center py-2 mb-0" role="alert">
+                                <i class="fa-solid fa-circle-check fa-lg me-2 text-success"></i>
+                                <div class="small">
+                                    <strong>Recommended Waste Category:</strong> {{ result.recommended_category }}
+                                </div>
+                            </div>{% endif %}
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="mt-4 pt-2">
+                            {% if result.can_claim_rewards and not result.points_claimed and result.points_awarded > 0 and result.scan_id %}
+                                <form method="POST" action="{{ url_for('household.claim_ai_scan', scan_id=result.scan_id) }}" class="mb-2">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-warning w-100 fw-bold py-2 rounded-pill shadow-sm">
+                                        <i class="fa-solid fa-gift me-2"></i> Claim +{{ result.points_awarded }} Points Now!
+                                    </button>
+                                </form>
+                            {% elif result.points_claimed %}
+                                <div class="alert alert-success text-center py-2 small fw-bold mb-2">
+                                    <i class="fa-solid fa-check-double me-1"></i> Points Successfully Credited to Your Account!
+                                </div>
+                            {% endif %}
+
+                            <a href="{{ url_for('household.new_request') }}" class="btn btn-outline-success w-100 py-2 rounded-pill">
+                                <i class="fa-solid fa-calendar-plus me-2"></i> Schedule Doorstep Pickup For This Waste
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if result.get('is_simulated') or not result.get('success') %}
+                <div class="alert alert-light border small text-muted d-flex align-items-center mb-0">
+                    <i class="fa-solid fa-info-circle text-primary me-2 fa-lg"></i>
+                    <div>
+                        <strong>Scanner status:</strong> {{ result.message }}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- How it works Card -->
+        <div class="card shadow-sm border-0 p-4" style="border-radius: 16px;">
+            <h5 class="fw-bold text-dark mb-3">
+                <i class="fa-solid fa-lightbulb text-warning me-2"></i> How AI Rewards Work in EcoSync
+            </h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3 text-center h-100">
+                        <div class="text-primary fs-3 mb-2"><i class="fa-solid fa-camera"></i></div>
+                        <h6 class="fw-bold mb-1">1. Snap Photo</h6>
+                        <p class="small text-muted mb-0">Take a clear picture of segregated plastic bottles, glass, cans, or cardboard boxes.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3 text-center h-100">
+                        <div class="text-success fs-3 mb-2"><i class="fa-solid fa-robot"></i></div>
+                        <h6 class="fw-bold mb-1">2. AI Identification</h6>
+                        <p class="small text-muted mb-0">Our Roboflow computer vision workflow segments items and counts each material stream.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="p-3 bg-light rounded-3 text-center h-100">
+                        <div class="text-warning fs-3 mb-2"><i class="fa-solid fa-award"></i></div>
+                        <h6 class="fw-bold mb-1">3. Redeem Rewards</h6>
+                        <p class="small text-muted mb-0">Points are credited to your balance, redeemable for grocery coupons & municipal tax discounts.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function handleFileSelect(event) {
+    const input = event.target;
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('scannerPreviewImg').src = e.target.result;
+            document.getElementById('uploadPrompt').classList.add('d-none');
+            document.getElementById('scannerPreviewBox').classList.remove('d-none');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function resetFileSelect(event) {
+    event.stopPropagation();
+    document.getElementById('scannerPhotoInput').value = '';
+    document.getElementById('uploadPrompt').classList.remove('d-none');
+    document.getElementById('scannerPreviewBox').classList.add('d-none');
+}
+
+// Show loading spinner on submit
+document.getElementById('scannerForm').addEventListener('submit', function() {
+    const btn = document.getElementById('analyzeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> AI Model Analyzing Trash...';
+});
+</script>
+{% endblock %}

@@ -88,8 +88,8 @@
                             <!-- Photo thumbnail if uploaded -->
                             {% if req.photo_filename %}
                                 <div class="mb-3">
-                                    <a href="{{ url_for('static', filename='uploads/' + req.photo_filename) }}" target="_blank">
-                                        <img src="{{ url_for('static', filename='uploads/' + req.photo_filename) }}" alt="Waste Photo" class="img-thumbnail" style="max-height: 100px;">
+                                    <a href="{{ url_for('serve_user_media', filename=req.photo_filename) }}" target="_blank">
+                                        <img src="{{ url_for('serve_user_media', filename=req.photo_filename) }}" alt="Waste Photo" class="img-thumbnail" style="max-height: 100px;">
                                     </a>
                                 </div>
                             {% endif %}
@@ -105,6 +105,7 @@
 
                                 {% if req.status == 'Assigned' %}
                                     <form method="POST" action="{{ url_for('worker.accept_task', request_id=req.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="btn btn-primary w-100 btn-sm">
                                             <i class="fa-solid fa-check me-1"></i> Accept Collection Task
                                         </button>
@@ -112,6 +113,7 @@
 
                                 {% elif req.status == 'Accepted' %}
                                     <form method="POST" action="{{ url_for('worker.collect_task', request_id=req.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <button type="submit" class="btn btn-warning w-100 btn-sm text-dark fw-semibold">
                                             <i class="fa-solid fa-box me-1"></i> Confirm Waste Collected
                                         </button>
@@ -120,6 +122,7 @@
                                 {% elif req.status == 'Collected' %}
                                     <!-- Deliver to Center Form -->
                                     <form method="POST" action="{{ url_for('worker.deliver_to_center', request_id=req.id) }}">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                         <div class="mb-2">
                                             <select name="center_id" class="form-select form-select-sm border-danger" required>
                                                 <option value="" disabled selected>Select Drop-off Facility...</option>
