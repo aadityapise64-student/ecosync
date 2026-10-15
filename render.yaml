@@ -4,7 +4,7 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: flask --app app:create_app db upgrade && gunicorn --bind 0.0.0.0:$PORT 'app:create_app()'
+    startCommand: flask --app app:create_app db upgrade && python provision_demo_accounts.py && gunicorn --bind 0.0.0.0:$PORT 'app:create_app()'
     healthCheckPath: /health
     envVars:
       # inference-sdk currently supports Python <3.14. Pin Render to a
@@ -18,6 +18,9 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: REQUIRE_DATABASE_URL
+        value: "true"
+      # Public shared credentials are intended for this educational prototype.
+      - key: ENABLE_DEMO_ACCOUNTS
         value: "true"
       - key: SUPABASE_URL
         sync: false

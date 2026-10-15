@@ -50,3 +50,5 @@ class Config:
     ROBOFLOW_CLASSES = os.environ.get('ROBOFLOW_CLASSES', 'PAPER, PLASTIC, GLASS, METAL, CARDBOARD')
     # Synthetic detections are opt-in for local UI development only.
     AI_DEMO_MODE = os.environ.get('AI_DEMO_MODE', 'false').strip().lower() == 'true'
+    # Provision shared sample accounts only when explicitly enabled (for demos).
+    ENABLE_DEMO_ACCOUNTS = os.environ.get('ENABLE_DEMO_ACCOUNTS', 'false').strip().lower() == 'true'
