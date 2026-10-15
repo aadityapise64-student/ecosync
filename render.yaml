@@ -7,6 +7,10 @@ services:
     startCommand: flask --app app:create_app db upgrade && gunicorn --bind 0.0.0.0:$PORT 'app:create_app()'
     healthCheckPath: /health
     envVars:
+      # inference-sdk currently supports Python <3.14. Pin Render to a
+      # supported minor instead of letting it select 3.14 by default.
+      - key: PYTHON_VERSION
+        value: 3.13.7
       - key: SECRET_KEY
         generateValue: true
       - key: SESSION_COOKIE_SECURE
